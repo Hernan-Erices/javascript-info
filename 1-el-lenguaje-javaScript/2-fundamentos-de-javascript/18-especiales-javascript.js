@@ -636,16 +636,10 @@ test();
 
 /*
 - Utiliza siempre === y !== para comparar valores.
-
 - Prefiere const antes que let.
-
 - Usa Arrow Functions para funciones pequeñas y callbacks.
-
 - Usa Function Declaration para funciones principales.
-
 - Finaliza las sentencias con punto y coma.
-
 - Activa siempre "use strict" en proyectos modernos.
-
 - Escribe código legible antes que código corto.
 */
