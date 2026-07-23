@@ -1,4 +1,5 @@
 /*
+https://javascript.info/coding-style
 
 Estilo de codificación (Coding Style)
 
