@@ -1,1534 +1,754 @@
-//==============================================//
-// ÁMBITO DE VARIABLES Y EL CONCEPTO DE "CLOSURE"
-//==============================================//
-
 /*
-JavaScript es un lenguaje fuertemente orientado a funciones. Una función puede:
+ALCANCE DE VARIABLES Y CIERRES
 
-- Crearse en cualquier momento.
-- Guardarse en una variable.
-- Pasarse como argumento a otra función.
-- Devolverse desde otra función.
-- Ejecutarse mucho tiempo después de haber sido creada.
+JavaScript está muy orientado al uso de funciones. Una función puede crearse,
+pasarse como argumento, devolverse desde otra función y ejecutarse desde una
+parte diferente del programa.
 
-Gracias a esta flexibilidad, es importante entender cómo funcionan las variables
-y el ámbito (scope) en JavaScript.
+Una función también puede acceder a variables externas. Esto plantea varias
+preguntas importantes:
 
-Sabemos que una función puede acceder a variables definidas fuera de ella.
-Pero surgen varias preguntas interesantes:
+- ¿Qué valor obtiene si una variable externa cambia después de crear la función?
+- ¿Qué ocurre cuando la función se ejecuta desde otro lugar?
+- ¿Cómo puede una función seguir accediendo a variables de una función que ya
+  terminó su ejecución?
 
-- ¿Qué ocurre si una variable externa cambia después de crear la función?
-- ¿La función utilizará el valor antiguo o el nuevo?
-- Si una función se pasa a otra parte del programa, ¿seguirá teniendo acceso
-    a las variables del lugar donde fue creada?
+Para comprender estos comportamientos es necesario estudiar el alcance,
+los entornos léxicos y los cierres.
 
-La respuesta a todas estas preguntas está relacionada con dos conceptos
-fundamentales de JavaScript:
+Este tema se centra en variables declaradas con let y const. Ambas se comportan
+de la misma forma respecto al alcance explicado aquí. var presenta diferencias
+que corresponden a otro tema.
 
-- Ámbito (Scope)
-- Closure (Clausura)
-
-En este capítulo aprenderemos cómo funcionan ambos internamente.
+Fuente: javascript.info
+:chatgpt-content-reference{index="0"}
 */
 
 
-//==============================================//
-// VARIABLES let, const y var
-//==============================================//
-
 /*
-JavaScript permite declarar variables de tres maneras:
+1. ALCANCE DE BLOQUE
 
-- let   → Declaración moderna (recomendada).
-- const → Igual que let, pero el identificador no puede reasignarse.
-- var   → Forma antigua de declarar variables (se estudiará más adelante).
+Cuando una variable se declara con let o const dentro de un bloque {...},
+solo puede utilizarse dentro de ese bloque.
 
-En este capítulo se utilizará principalmente let.
-
-Todo lo explicado también aplica para const, ya que ambas comparten
-el mismo comportamiento respecto al ámbito (scope).
-
-La palabra clave var posee diferencias importantes que se estudiarán
-en un capítulo independiente.
+Esto permite mantener variables locales separadas del resto del código.
 */
 
+function ejemploAlcanceDeBloque() {
+  {
+    let mensaje = "Hello";
 
-//==============================================//
-// BLOQUES DE CÓDIGO
-//==============================================//
+    alert(mensaje); // Hello
+  }
 
-/*
-Un bloque de código es cualquier sección delimitada por llaves:
-
-{
-    ...
-}
-
-Cuando una variable se declara con let o const dentro de un bloque,
-solo existe dentro de ese bloque.
-
-Fuera de él, la variable deja de existir.
-*/
-
-{
-  // Variable local del bloque
-    let message = "Hello";
-    alert(message); // Hello
-}
-
-// Error:
-// message solo existía dentro del bloque anterior.
-alert(message);
-
-
-/*
-Esto permite aislar código y evitar conflictos entre variables
-con el mismo nombre.
-*/
-
-{
-    let message = "Hello";
-    alert(message);
-}
-
-{
-  // Esta variable es completamente distinta de la anterior.
-    let message = "Goodbye";
-    alert(message);
+  // alert(mensaje);
+  // Error: mensaje no está definido fuera del bloque.
 }
 
 
 /*
-Aunque ambas variables se llaman "message", no generan conflicto
-porque pertenecen a bloques diferentes.
+Los bloques también permiten reutilizar un mismo nombre de variable
+en bloques independientes.
 */
 
+function ejemploBloquesIndependientes() {
+  {
+    let mensaje = "Hello";
+    alert(mensaje);
+  }
 
-//==============================================//
-// ¿QUÉ PASA SI NO EXISTEN BLOQUES?
-//==============================================//
-
-/*
-Si ambas declaraciones estuvieran en el mismo ámbito,
-JavaScript produciría un error.
-
-No es posible declarar dos veces una variable con let
-dentro del mismo bloque.
-*/
-
-let message = "Hello";
-alert(message);
-
-let message = "Goodbye"; // Error: Identifier 'message' has already been declared
-alert(message);
-
-
-/*
-Los bloques permiten reutilizar nombres de variables sin que interfieran
-entre sí, ya que cada bloque crea su propio ámbito.
-*/
-
-
-//==============================================//
-// ÁMBITO EN if, for y while
-//==============================================//
-
-/*
-Las estructuras de control también crean su propio bloque.
-
-Por ello, las variables declaradas con let o const dentro de un if,
-for o while únicamente existen dentro de esas llaves.
-*/
-
-if (true) {
-    let phrase = "Hello!";
-    alert(phrase); // Hello!
+  {
+    let mensaje = "Goodbye";
+    alert(mensaje);
+  }
 }
 
-// Error:
-// phrase dejó de existir al finalizar el bloque if.
-alert(phrase);
-
 
 /*
-Esto resulta muy útil porque permite crear variables temporales
-que solo son necesarias durante la ejecución de una condición.
+Sin los bloques independientes, intentar declarar dos veces la misma variable
+con let dentro del mismo alcance produce un error.
 
-Así se evita contaminar el resto del programa con variables
-que ya no serán utilizadas.
+El siguiente ejemplo contiene un error intencional, por lo que se mantiene
+comentado.
 */
 
+function ejemploDeclaracionDuplicada() {
+  /*
+  let mensaje = "Hello";
+  alert(mensaje);
 
-//==============================================//
-// ÁMBITO EN LOS BUCLES
-//==============================================//
-
-for (let i = 0; i < 3; i++) {
-  // i solo existe dentro del bucle.
-    alert(i);
+  let mensaje = "Goodbye"; // Error: variable already declared
+  alert(mensaje);
+  */
 }
 
-// Error:
-// La variable i no existe fuera del for.
-alert(i);
-
 
 /*
-Aunque visualmente parezca que "let i" está fuera de las llaves,
-el propio for crea un ámbito de bloque.
+2. ALCANCE EN IF
 
-Por ello, la variable i solo vive durante la ejecución del bucle
-y desaparece cuando este termina.
-
-Este comportamiento evita errores muy comunes y hace que el código
-sea más seguro y fácil de mantener. */
-
-/*
-==========================================
-FUNCIONES ANIDADAS (NESTED FUNCTIONS)
-==========================================
-
-Una función anidada (nested function) es una función que se declara dentro
-de otra función.
-
-En JavaScript esto es completamente válido y muy común. Se utiliza para
-organizar mejor el código y encapsular lógica que solo será utilizada por
-la función que la contiene.
-
-Las funciones anidadas pueden:
-
-- Acceder a las variables de la función externa.
-- Ser llamadas únicamente desde la función donde fueron creadas.
-- Ser devueltas como resultado de otra función.
-- Recordar las variables del entorno donde fueron creadas (Closure).
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Funciones auxiliares (Helper Functions)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Uno de los usos más comunes consiste en crear pequeñas funciones auxiliares
-que simplifican la lógica principal.
+Las variables declaradas dentro del bloque de un if también quedan limitadas
+a ese bloque.
 */
 
-function sayHiBye(firstName, lastName) {
+function ejemploAlcanceEnIf() {
+  if (true) {
+    let frase = "Hello!";
 
-  // Función auxiliar
-function getFullName() {
-    return firstName + " " + lastName;
+    alert(frase); // Hello!
+  }
+
+  // alert(frase);
+  // Error: frase no existe fuera del bloque del if.
 }
 
-alert("Hello, " + getFullName());
-alert("Bye, " + getFullName());
 
+/*
+3. ALCANCE EN BUCLES
+
+Las variables declaradas dentro de un for o while también tienen alcance local
+al bloque correspondiente.
+
+En un for, una variable declarada en la parte inicial de la estructura,
+como let i, se considera parte del bloque del bucle.
+*/
+
+function ejemploAlcanceEnFor() {
+  for (let i = 0; i < 3; i++) {
+    alert(i); // 0, luego 1, luego 2
+  }
+
+  // alert(i);
+  // Error: i no existe fuera del for.
 }
 
-/*
-En este ejemplo:
-
-- getFullName() solo existe dentro de sayHiBye().
-- Puede acceder a firstName y lastName.
-- No puede ejecutarse desde fuera de la función.
-
-Ejemplo:
-
-sayHiBye("John", "Smith");
-
-Salida:
-
-Hello, John Smith
-Bye, John Smith
-*/
 
 /*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-2. ¿Por qué puede acceder a esas variables?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. FUNCIONES ANIDADAS
 
-La función getFullName() utiliza firstName y lastName aunque no sean
-variables propias.
+Una función está anidada cuando se crea dentro de otra función.
 
-Esto ocurre porque una función puede acceder a las variables del entorno
-donde fue creada.
+La función interna puede acceder a:
 
-Visualmente:
+- Sus propias variables.
+- Los parámetros de la función externa.
+- Las variables disponibles en los entornos externos.
 
-sayHiBye()
-│
-├── firstName
-├── lastName
-│
-└── getFullName()
-        │
-        └── utiliza esas variables
-
-Mientras getFullName() exista, podrá leer esas variables.
+Esto permite crear funciones auxiliares que trabajan con los datos de la
+función que las contiene.
 */
+
+function ejemploFuncionAnidada() {
+  function saludarYDespedir(nombre, apellido) {
+    function obtenerNombreCompleto() {
+      return nombre + " " + apellido;
+    }
+
+    alert("Hello, " + obtenerNombreCompleto());
+    alert("Bye, " + obtenerNombreCompleto());
+  }
+
+  saludarYDespedir("John", "Smith");
+}
+
 
 /*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-3. Devolver una función
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Una característica especialmente importante es que una función anidada puede
+devolverse y utilizarse posteriormente desde otra parte del código.
 
-Lo realmente interesante ocurre cuando una función anidada NO se ejecuta,
-sino que se devuelve.
-
-La función podrá utilizarse posteriormente desde cualquier parte del programa.
+Aunque se ejecute después y desde otro lugar, continuará teniendo acceso a las
+variables externas correspondientes al lugar donde fue creada.
 */
 
-function makeCounter() {
+
+/*
+5. PRIMER EJEMPLO DE CIERRE: CONTADOR
+
+makeCounter crea una variable count y devuelve una función anidada.
+
+La función devuelta sigue teniendo acceso a count incluso después de que
+makeCounter haya terminado.
+
+Cada llamada devuelve primero el valor actual y después lo incrementa debido
+al operador count++.
+*/
+
+function ejemploContador() {
+  function makeCounter() {
     let count = 0;
 
     return function () {
-        return count++;
+      return count++;
     };
+  }
+
+  const contador = makeCounter();
+
+  alert(contador()); // 0
+  alert(contador()); // 1
+  alert(contador()); // 2
 }
 
-let counter = makeCounter();
-
-alert(counter()); // 0
-alert(counter()); // 1
-alert(counter()); // 2
 
 /*
-¿Qué sucede aquí?
+6. ENTORNO LÉXICO
 
-Paso 1
+Cada función que se está ejecutando, cada bloque de código {...} y el script
+completo tienen asociado internamente un objeto llamado Entorno Léxico.
 
-Se ejecuta:
+El Entorno Léxico tiene dos partes:
 
-let counter = makeCounter();
+1. Environment Record
+   Almacena las variables locales como propiedades y también contiene otra
+   información relacionada con la ejecución.
 
-Dentro ocurre:
+2. Referencia al entorno léxico externo
+   Permite llegar al entorno correspondiente al código exterior.
 
-count = 0
+Desde este punto de vista, una variable puede entenderse como una propiedad
+del Environment Record correspondiente.
 
-Luego devuelve la función interna.
+Obtener o modificar una variable equivale conceptualmente a obtener o modificar
+esa propiedad interna.
+*/
 
-counter termina almacenando esa función.
 
-Visualmente:
+/*
+7. ENTORNO LÉXICO GLOBAL
 
-counter
-    │
-    ▼
-function () {
+El script completo tiene su propio Entorno Léxico global.
+
+Este entorno no tiene otro entorno exterior, por lo que su referencia externa
+es null.
+
+Durante la ejecución del script, el contenido de este entorno cambia a medida
+que las variables se inicializan y reciben nuevos valores.
+*/
+
+
+/*
+8. ESTADOS DE UNA VARIABLE let
+
+Cuando comienza la ejecución del script, el motor ya conoce las variables
+declaradas.
+
+Una variable let pasa conceptualmente por estas etapas:
+
+1. Existe internamente en estado "no inicializado".
+2. Antes de su declaración no puede utilizarse.
+3. Al ejecutarse la declaración sin asignación, su valor pasa a ser undefined.
+4. Posteriormente puede recibir y cambiar valores.
+*/
+
+function ejemploInicializacionLet() {
+  let frase;
+
+  alert(frase); // undefined
+
+  frase = "Hello";
+  alert(frase); // Hello
+
+  frase = "Goodbye";
+  alert(frase); // Goodbye
+}
+
+
+/*
+El Entorno Léxico es un objeto de especificación.
+
+Sirve para describir cómo funciona JavaScript internamente, pero no es un objeto
+al que podamos acceder o modificar directamente desde nuestro código.
+
+Los motores de JavaScript pueden implementar optimizaciones internas siempre que
+el comportamiento observable del programa siga siendo el descrito.
+*/
+
+
+/*
+9. DECLARACIONES DE FUNCIONES
+
+Una función también es un valor, pero una Function Declaration tiene una
+diferencia importante frente a una variable let:
+
+La declaración de función se inicializa completamente cuando se crea el
+Entorno Léxico.
+
+Por eso una función declarada mediante Function Declaration puede utilizarse
+antes de la línea donde aparece su declaración.
+*/
+
+function ejemploDeclaracionDeFuncion() {
+  saludar();
+
+  function saludar() {
+    alert("Hello!");
+  }
+}
+
+
+/*
+Este comportamiento corresponde a Function Declaration.
+
+No debe confundirse con una Function Expression asignada a una variable.
+*/
+
+
+/*
+10. ENTORNO LÉXICO INTERNO Y EXTERNO
+
+Cada vez que se llama a una función se crea un nuevo Entorno Léxico para esa
+ejecución.
+
+Este nuevo entorno almacena:
+
+- Los parámetros de la llamada.
+- Las variables locales.
+- Una referencia al Entorno Léxico exterior.
+
+Cuando JavaScript necesita encontrar una variable, sigue este proceso:
+
+1. Busca en el Entorno Léxico actual.
+2. Si no está allí, busca en el entorno exterior.
+3. Continúa siguiendo entornos exteriores.
+4. El proceso termina al llegar al entorno global.
+
+Si la variable no existe en ninguno de ellos, acceder a ella produce un error.
+*/
+
+function ejemploBusquedaDeVariables() {
+  const frase = "Hello";
+
+  function decir(nombre) {
+    alert(frase + ", " + nombre);
+  }
+
+  decir("John");
+}
+
+/*
+En decir("John"):
+
+- nombre se encuentra en el Entorno Léxico creado para esa llamada.
+- frase no existe localmente.
+- JavaScript sigue la referencia al entorno exterior.
+- frase se encuentra allí.
+
+Flujo:
+entorno interno -> entorno externo -> entorno global
+*/
+
+
+/*
+11. DEVOLVER UNA FUNCIÓN
+
+Volvamos al contador para analizarlo mediante entornos léxicos.
+*/
+
+function crearContador() {
+  let count = 0;
+
+  return function () {
     return count++;
+  };
 }
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-4. ¿Por qué count no desaparece?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Cuando hacemos:
+/*
+Cada vez que se ejecuta crearContador(), se crea un nuevo Entorno Léxico.
 
-counter();
+Dentro de esa ejecución se crea también la función anidada que posteriormente
+se devuelve.
 
-la función sigue teniendo acceso a count.
+Todas las funciones recuerdan el Entorno Léxico en el que fueron creadas.
+*/
 
-Primera llamada:
+
+/*
+12. PROPIEDAD OCULTA [[Environment]]
+
+Toda función posee internamente una propiedad especial llamada [[Environment]].
+
+Esta propiedad mantiene una referencia al Entorno Léxico donde la función fue
+creada.
+
+[[Environment]]:
+
+- Se establece cuando se crea la función.
+- Mantiene la referencia al entorno correspondiente.
+- No cambia según el lugar desde el que posteriormente se invoque la función.
+
+No podemos acceder directamente a [[Environment]] desde código JavaScript
+normal; se utiliza para explicar internamente este comportamiento.
+*/
+
+
+/*
+En el caso de crearContador():
+
+const contador = crearContador();
+
+la función guardada en contador conserva mediante [[Environment]] una referencia
+al entorno donde existe:
 
 count = 0
-↓
-devuelve 0
-↓
-count = 1
 
-Segunda llamada:
+Cuando posteriormente se ejecuta contador(), se crea un nuevo Entorno Léxico
+para esa llamada.
 
-count = 1
-↓
-devuelve 1
-↓
-count = 2
-
-Tercera llamada:
-
-count = 2
-↓
-devuelve 2
-↓
-count = 3
-
-La variable NO vuelve a cero.
-
-Sigue existiendo incluso después de que makeCounter()
-terminó de ejecutarse.
+Como count no existe en ese nuevo entorno, JavaScript continúa hacia el entorno
+exterior indicado por [[Environment]] y encuentra allí count.
 */
 
-/*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-5. Cada llamada crea un contador nuevo
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Cada vez que llamamos makeCounter(), se crea una variable count diferente.
+function ejemploPersistenciaDelContador() {
+  const contador = crearContador();
+
+  alert(contador()); // 0
+  alert(contador()); // 1
+  alert(contador()); // 2
+}
+
+
+/*
+Una variable se actualiza en el Entorno Léxico donde reside.
+
+Por eso las sucesivas llamadas al contador modifican siempre el mismo count.
 */
 
-let counter1 = makeCounter();
-let counter2 = makeCounter();
-
-alert(counter1()); // 0
-alert(counter1()); // 1
-
-alert(counter2()); // 0
-alert(counter2()); // 1
 
 /*
-Visualmente:
+13. CONTADORES INDEPENDIENTES
 
-counter1
-└── count = 2
+Cada llamada a crearContador() crea un nuevo Entorno Léxico.
 
-counter2
-└── count = 2
-
-Cada contador posee su propio estado.
-
-Ninguno modifica las variables del otro.
+Por lo tanto, si llamamos dos veces a crearContador(), cada función devuelta
+mantendrá su propia referencia a su propio count.
 */
 
+function ejemploContadoresIndependientes() {
+  const contadorUno = crearContador();
+  const contadorDos = crearContador();
+
+  alert(contadorUno()); // 0
+  alert(contadorUno()); // 1
+
+  alert(contadorDos()); // 0
+  alert(contadorDos()); // 1
+}
+
+
 /*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-6. ¿Por qué esto es útil?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+contadorUno y contadorDos no comparten count.
 
-Este comportamiento permite crear funciones que mantienen información
-privada sin utilizar variables globales.
-
-Algunas aplicaciones reales son:
-
-- Contadores.
-- Generadores de IDs.
-- Generadores de números pseudoaleatorios.
-- Temporizadores.
-- Funciones configurables.
-- Encapsulamiento de datos.
-- Caché de resultados.
+Cada uno recuerda el Entorno Léxico correspondiente a una ejecución diferente
+de crearContador().
 */
 
-/*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-7. Concepto importante
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Cuando una función se crea dentro de otra función:
-
-- Puede acceder a las variables externas.
-
-- Puede seguir utilizándolas incluso después de que la función exterior haya terminado.
-
-- Cada ejecución de la función exterior crea un conjunto nuevo de variables independientes.
-
-Este comportamiento es la base de uno de los conceptos más importantes
-de JavaScript: las CLAUSURAS (Closures), que estudiaremos a continuación.
-*/
 
 /*
+14. CIERRES
 
-=========================================================
-ÁMBITO (SCOPE) Y ALCANCE LÉXICO (LEXICAL ENVIRONMENT)
-=========================================================
+Un cierre es una función que recuerda sus variables externas y puede acceder
+a ellas.
 
-Hasta ahora hemos visto que una función puede acceder a variables externas.
+En JavaScript, las funciones son cierres por naturaleza, con una excepción
+mencionada en el contenido original que corresponde al tema "new Function".
 
-Pero...
-
-- ¿Cómo sabe JavaScript dónde buscar una variable?
-- ¿Por qué una función recuerda variables incluso después de terminar?
-- ¿Cómo funcionan realmente los Closures?
-
-Para responder estas preguntas debemos comprender el concepto de
-Ámbito Léxico (Lexical Scope).
-
-Este es uno de los conceptos internos más importantes del lenguaje y la
-base del funcionamiento de las clausuras (Closures).
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PASO 1. VARIABLES Y ENTORNO LÉXICO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Cada vez que JavaScript ejecuta:
-
-- un script
-- una función
-- un bloque de código { }
-
-crea internamente una estructura llamada:
-
-        Entorno Léxico (Lexical Environment)
-
-Este objeto NO puede verse desde JavaScript.
-Es una estructura interna utilizada por el motor del lenguaje.
-
-Su función es almacenar todas las variables y permitir encontrarlas
-cuando el código las necesita.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-¿De qué está formado un Entorno Léxico?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Consta de dos partes:
-
-1) Registro de Entorno (Environment Record)
-
-Es un objeto interno donde se almacenan todas las variables locales,
-parámetros y otra información relacionada con la ejecución.
-
-Ejemplo conceptual:
-
-Registro de Entorno
-
-{
-    phrase: "Hello",
-    number: 10,
-    user: {...}
-}
-
-2) Referencia al Entorno Externo
-
-Cada entorno mantiene un enlace al entorno donde fue creado.
-
-Visualmente:
-
-Entorno actual
-│
-├── Variables locales
-└── Referencia
-        │
-        ▼
-Entorno externo
-
-Gracias a esta referencia JavaScript puede buscar variables fuera del
-bloque actual.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Una variable realmente es...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Cuando escribimos:
-
-*/
-
-let message = "Hola";
-
-/*
-
-Parece que "message" existe por sí sola.
-
-Internamente ocurre algo parecido a esto:
-
-Registro de Entorno
-
-{
-    message: "Hola"
-}
-
-Es decir:
-
-Una variable no es más que una propiedad almacenada dentro del Registro
-de Entorno correspondiente.
-
-Por eso:
-
-- Leer una variable significa buscar una propiedad.
-- Modificar una variable significa cambiar esa propiedad.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-El Entorno Léxico Global
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Cuando un programa comienza a ejecutarse se crea un primer entorno:
-
-                Entorno Global
-
-Este contiene todas las variables y funciones declaradas fuera de
-cualquier función.
-
-Visualmente:
-
-Entorno Global
-
-{
-    phrase
-    user
-    total
-    sayHi()
-}
-
-↓
-
-No tiene ningún entorno superior.
-
-Su referencia externa es:
-
-null
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-¿Cómo evolucionan las variables?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Supongamos este código:
-
-*/
-
-let phrase;
-
-phrase = "Hello";
-
-phrase = "Hi";
-
-/*
-
-Durante la ejecución ocurre aproximadamente esto:
-
-1.
-
-{
-    phrase: <no inicializada>
-}
-
-↓
-
-2.
-
-{
-    phrase: undefined
-}
-
-↓
-
-3.
-
-{
-    phrase: "Hello"
-}
-
-↓
-
-4.
-
-{
-    phrase: "Hi"
-}
-
-El entorno va actualizando las propiedades conforme el programa avanza.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Importante sobre let
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Cuando JavaScript encuentra:
-
-let phrase;
-
-la variable NO aparece mágicamente en ese instante.
-
-Antes de ejecutar el código, el motor ya conoce todas las variables
-declaradas con let.
-
-Inicialmente permanecen en un estado especial denominado:
-
-"No inicializada"
-
-Durante ese estado la variable existe internamente, pero todavía no
-puede utilizarse.
-
-Cuando llega su declaración, pasa a valer:
-
-undefined
-
-Y posteriormente puede recibir cualquier otro valor.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-El Entorno Léxico es un objeto interno
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Todo esto forma parte de la especificación oficial del lenguaje.
-
-No podemos hacer algo como:
-
-environment.message
-
-porque dicho objeto NO existe dentro del código JavaScript.
-
-Es únicamente un mecanismo interno utilizado por el motor para saber
-dónde viven las variables.
-
-Cada motor (V8, SpiderMonkey, JavaScriptCore, etc.) puede implementarlo
-de forma distinta siempre que el comportamiento observable sea el mismo.
-
-====================================================================
-PASO 2. DECLARACIÓN DE FUNCIONES
-====================================================================
-
-Las funciones también son valores.
-
-La diferencia es que una Function Declaration se inicializa
-inmediatamente cuando se crea el entorno léxico.
-
-Ejemplo:
-
-*/
-
-sayHi();
-
-function sayHi() {
-    console.log("Hola");
-}
-
-/*
-
-Aunque la llamada aparece antes de la función, funciona correctamente.
-
-¿Por qué?
-
-Porque al crear el Entorno Global ocurre algo parecido a esto:
-
-Entorno Global
-
-{
-    sayHi: function(){...}
-}
-
-La función ya está disponible desde el inicio de la ejecución.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Esto solo ocurre con Function Declarations
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-No ocurre con expresiones de función.
-
-Ejemplo:
-
-*/
-
-sayHello(); // Error
-
-let sayHello = function () {
-    console.log("Hola");
-};
-
-/*
-
-Aquí la variable sigue las reglas normales de let.
-
-No contendrá la función hasta llegar a esa línea.
-
-====================================================================
-PASO 3. ENTORNO LÉXICO INTERNO Y EXTERNO
-====================================================================
-
-Cada vez que una función es llamada se crea un NUEVO Entorno Léxico.
-
-Ejemplo:
-
-*/
-
-let greeting = "Hello";
-
-function say(name) {
-    console.log(greeting + " " + name);
-}
-
-say("John");
-
-/*
-
-Cuando se ejecuta say("John") existen dos entornos.
-
-Entorno Global
-
-{
-    greeting: "Hello"
-    say: function
-}
-
-↓
-
-Entorno de say()
-
-{
-    name: "John"
-}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-¿Cómo encuentra una variable?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Cuando JavaScript necesita una variable sigue siempre el mismo orden.
-
-1.
-
-¿Existe localmente?
-
-↓
-
-Sí → usarla.
-
-↓
-
-No
-
-↓
-
-2.
-
-Ir al entorno externo.
-
-↓
-
-¿Existe allí?
-
-↓
-
-Sí → usarla.
-
-↓
-
-No
-
-↓
-
-3.
-
-Seguir buscando hacia arriba.
-
-↓
-
-4.
-
-Llegar al entorno global.
-
-↓
-
-5.
-
-Si no existe...
-
-→ ReferenceError (en modo estricto).
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Ejemplo
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-*/
-
-let phrase2 = "Hello";
-
-function speak(name) {
-    console.log(name);
-    console.log(phrase2);
-}
-
-speak("John");
-
-/*
-
-Búsqueda de variables:
-
-name
-
-↓
-
-Se encuentra inmediatamente dentro de speak().
-
-phrase2
-
-↓
-
-No existe localmente.
-
-↓
-
-Se sigue la referencia al entorno global.
-
-↓
-
-Se encuentra.
-
-Este mecanismo recibe el nombre de:
-
-Cadena de Entornos Léxicos
-(Lexical Environment Chain)
-
-====================================================================
-PASO 4. DEVOLVER UNA FUNCIÓN
-====================================================================
-
-Volvamos al famoso ejemplo.
-
-*/
-
-function makeCounter() {
-    let count = 0;
-
-    return function () {
-        return count++;
-    };
-}
-
-let counter = makeCounter();
-
-/*
-
-Cuando makeCounter() comienza:
-
-Entorno de makeCounter
-
-{
-    count: 0
-}
-
-Durante esa ejecución también se crea una función anidada.
-
-*/
-
-function makeCounterExample() {
-    let count = 0;
-
-    return function () {
-        return count++;
-    };
-}
-
-/*
-
-Lo importante es que TODAS las funciones recuerdan el entorno donde fueron
-creadas.
-
-Internamente poseen una propiedad oculta denominada:
-
-[[Environment]]
-
-No podemos verla desde JavaScript.
-
-Pero conceptualmente es algo parecido a:
-
-Función
-
-{
-    código...
-    [[Environment]] → referencia al entorno donde nació
-}
-
-Cuando hacemos:
-
-*/
-
-let myCounter = makeCounter();
-
-/*
-
-La función devuelta conserva un enlace hacia:
-
-{
-    count: 0
-}
-
-Aunque makeCounter() haya terminado.
-
-Visualmente:
-
-myCounter
-│
-│
-▼
-
-function()
-
-↓
-
-[[Environment]]
-
-↓
-
-{
-    count: 0
-}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-¿Qué ocurre al ejecutar myCounter()?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Se crea un nuevo entorno para esa llamada.
-
-Como allí no existe count...
-
-JavaScript pregunta al entorno recordado mediante
+Las funciones recuerdan automáticamente dónde fueron creadas mediante
 [[Environment]].
 
-Lo encuentra.
-
-Lo incrementa.
-
-Lo devuelve.
-
-Primera llamada
-
-count = 0
-
-↓
-
-devuelve 0
-
-↓
-
-count = 1
-
-Segunda llamada
-
-count = 1
-
-↓
-
-devuelve 1
-
-↓
-
-count = 2
-
-Tercera llamada
-
-count = 2
-
-↓
-
-devuelve 2
-
-↓
-
-count = 3
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Una variable siempre vive en su propio entorno
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Cuando modificamos:
-
-count++
-
-La variable cambia en el entorno donde fue creada.
-
-No se copia.
-
-No se recrea.
-
-Siempre se modifica el mismo valor.
-
-Por eso cada llamada conserva el contador anterior.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Idea fundamental
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Cada función recuerda para siempre el lugar donde fue creada.
-
-No importa:
-
-- dónde se almacene.
-- dónde se pase como argumento.
-- dónde se ejecute.
-
-Siempre buscará las variables siguiendo el entorno léxico que tenía
-cuando nació.
-
-Este comportamiento será la base del siguiente concepto:
-
-Closure (Clausura).
+Gracias a esto pueden acceder a variables externas incluso cuando se ejecutan
+posteriormente desde otra parte del código.
 */
 
-/*
-=========================================================
-CLOSURES (CLAUSURAS)
-=========================================================
 
-Después de comprender el funcionamiento de los Entornos Léxicos
-(Lexical Environments), ahora podemos entender uno de los conceptos
-más importantes de JavaScript: las Clausuras (Closures).
-
-Este concepto aparece constantemente en entrevistas técnicas y es la
-base de muchas características avanzadas del lenguaje.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-¿Qué es un Closure?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Una clausura (Closure) es una función que recuerda el entorno léxico
-donde fue creada, incluso después de que la función exterior haya
-terminado su ejecución.
-
-Gracias a ello puede seguir accediendo a las variables externas que
-existían en el momento de su creación.
-
-En otras palabras:
-
-Una función no solo almacena su código.
-
-También recuerda el lugar donde nació.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Ejemplo básico
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*/
-
-function makeCounter() {
-    let count = 0;
+function ejemploCierre() {
+  function crearSaludo() {
+    let mensaje = "Hello";
 
     return function () {
-        return count++;
+      alert(mensaje);
     };
+  }
+
+  const saludar = crearSaludo();
+
+  saludar(); // Hello
 }
 
-let counter = makeCounter();
-
-console.log(counter()); // 0
-console.log(counter()); // 1
-console.log(counter()); // 2
 
 /*
-
-Aunque makeCounter() terminó hace tiempo, la variable count sigue
-existiendo.
-
-¿Por qué?
-
-Porque la función devuelta conserva una referencia al entorno donde fue
-creada.
-
-Visualmente:
-
-makeCounter()
-
-{
-    count: 0
-}
-
-↓
-
-devuelve
-
-function()
-
-↓
-
-[[Environment]]
-
-↓
-
-{ count: 0 }
-
-Cada llamada utiliza exactamente la misma variable.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-¿Cómo recuerda una función sus variables?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Internamente, toda función posee una propiedad oculta llamada:
-
-[[Environment]]
-
-Esta propiedad almacena una referencia al Entorno Léxico donde la función
-fue creada.
-
-No importa si posteriormente la función:
-
-- se guarda en una variable,
-- se devuelve desde otra función,
-- se pasa como argumento,
-- se ejecuta mucho tiempo después.
-
-Siempre utilizará el entorno que tenía cuando nació.
-
-Por eso decimos que la función "recuerda" sus variables externas.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Todas las funciones de JavaScript son Closures
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-En algunos lenguajes las clausuras deben activarse mediante una sintaxis
-especial.
-
-En JavaScript no.
-
-Todas las funciones son clausuras de forma natural.
-
-Cada función recuerda automáticamente su entorno mediante la propiedad
-interna:
-
-[[Environment]]
-
-Existe únicamente una excepción importante:
-
-new Function()
-
-Esta función crea código dinámicamente y NO recuerda el entorno donde fue
-creada.
-
-Ese caso se estudia en un capítulo posterior.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-¿Cómo responder en una entrevista?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Una respuesta completa podría ser:
-
-"Un Closure (Clausura) es una función que recuerda el entorno léxico
-donde fue creada y puede seguir accediendo a sus variables externas
-incluso después de que la función exterior haya terminado."
-
-También es buena idea mencionar que:
-
-- Todas las funciones de JavaScript son Closures.
-- Internamente utilizan la referencia [[Environment]].
-- Gracias a ello pueden acceder a variables externas.
-
-=========================================================
-RECOLECTOR DE BASURA (GARBAGE COLLECTOR)
-=========================================================
-
-Ahora surge una pregunta importante.
-
-Si una función terminó...
-
-¿Por qué sus variables siguen existiendo?
-
-La respuesta está en el Recolector de Basura (Garbage Collector).
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-¿Cuándo se libera la memoria?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Normalmente, cuando una función termina de ejecutarse, su Entorno Léxico
-ya no es necesario.
-
-Si ninguna referencia apunta hacia él, JavaScript elimina automáticamente
-esa memoria.
-
-Ejemplo:
-
+Aunque crearSaludo() ya terminó, la función almacenada en saludar continúa
+teniendo acceso a mensaje porque recuerda el Entorno Léxico donde fue creada.
 */
 
-function greet() {
-    let message = "Hola";
-
-    console.log(message);
-}
-
-greet();
 
 /*
+15. RECOGIDA DE BASURA Y ENTORNOS LÉXICOS
 
-Cuando greet() termina:
+Normalmente, cuando una función termina, su Entorno Léxico puede eliminarse
+junto con sus variables porque deja de ser accesible.
 
-- desaparece message
-- desaparece su entorno léxico
-- la memoria puede recuperarse
+Sin embargo, esto cambia si una función anidada continúa siendo accesible.
 
-Visualmente:
+Si una función interna permanece disponible, su [[Environment]] mantiene una
+referencia al Entorno Léxico externo.
 
-greet()
-
-↓
-
-{ message }
-
-↓
-
-Fin de la función
-
-↓
-
-Sin referencias
-
-↓
-
-Memoria liberada
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-¿Y cuándo NO se elimina?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Si una función interna sigue existiendo, entonces sigue apuntando hacia
-su entorno mediante [[Environment]].
-
-Mientras exista esa referencia, el entorno no puede eliminarse.
-
-Ejemplo:
-
+Mientras exista esa referencia, dicho entorno también debe mantenerse.
 */
 
-function f() {
-    let value = 123;
+function ejemploEntornoConservado() {
+  function crearFuncion() {
+    let valor = 123;
 
     return function () {
-        console.log(value);
+      alert(valor);
     };
+  }
+
+  const funcionGuardada = crearFuncion();
+
+  funcionGuardada(); // 123
 }
 
-let g = f();
 
 /*
-
-Visualmente:
-
-g
-
-↓
-
-function()
-
-↓
-
-[[Environment]]
-
-↓
-
-{
-    value: 123
-}
-
-Como g todavía existe, también debe existir value.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Varias funciones, varios entornos
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Cada llamada crea un entorno completamente independiente.
-
+Mientras funcionGuardada exista, el entorno correspondiente a la llamada de
+crearFuncion() sigue siendo accesible y valor permanece disponible.
 */
 
-function randomValue() {
-    let value = Math.random();
+
+/*
+16. VARIAS LLAMADAS, VARIOS ENTORNOS
+
+Si una función se ejecuta varias veces y en cada ejecución devuelve una función,
+cada ejecución puede mantener su propio Entorno Léxico.
+*/
+
+function ejemploVariosEntornos() {
+  function crearFuncion() {
+    let valor = Math.random();
 
     return function () {
-        console.log(value);
+      alert(valor);
     };
+  }
+
+  const funciones = [
+    crearFuncion(),
+    crearFuncion(),
+    crearFuncion(),
+  ];
+
+  funciones[0]();
+  funciones[1]();
+  funciones[2]();
 }
 
-let functions = [
-    randomValue(),
-    randomValue(),
-    randomValue()
-];
 
 /*
+En este ejemplo existen tres funciones almacenadas.
 
-Visualmente:
-
-Función 1
-↓
-
-{ value: 0.53 }
-
-Función 2
-↓
-
-{ value: 0.81 }
-
-Función 3
-↓
-
-{ value: 0.27 }
-
-Cada función recuerda únicamente su propio entorno.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-¿Cuándo desaparece definitivamente?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Cuando ya no existe ninguna referencia hacia la función, tampoco existe
-ninguna referencia hacia su entorno.
-
-Entonces el recolector de basura puede eliminar todo.
-
-Ejemplo:
-
+Cada una está vinculada mediante [[Environment]] al Entorno Léxico de la
+ejecución concreta de crearFuncion() en la que fue creada.
 */
 
-function createFunction() {
-    let value = 123;
+
+/*
+17. CUÁNDO PUEDE ELIMINARSE EL ENTORNO
+
+Un Entorno Léxico deja de ser necesario cuando se vuelve inaccesible.
+
+Si la última función que mantiene una referencia al entorno deja de ser
+accesible, ese entorno también puede limpiarse de memoria.
+*/
+
+function ejemploLiberacionDeEntorno() {
+  function crearFuncion() {
+    let valor = 123;
 
     return function () {
-        console.log(value);
+      alert(valor);
     };
+  }
+
+  let funcionGuardada = crearFuncion();
+
+  funcionGuardada();
+
+  funcionGuardada = null;
+
+  /*
+  Mientras funcionGuardada contenía la función, su [[Environment]] mantenía
+  accesible el entorno donde estaba valor.
+
+  Después de asignar null, esa referencia deja de existir y el entorno puede
+  limpiarse de memoria.
+  */
 }
 
-let fn = createFunction();
 
 /*
+18. OPTIMIZACIONES DE LOS MOTORES
 
-Mientras fn exista...
+Teóricamente, mientras una función siga activa mediante un cierre, sus variables
+externas correspondientes pueden permanecer disponibles.
 
-↓
+En la práctica, los motores de JavaScript realizan optimizaciones.
 
-value permanece en memoria.
-
-Ahora eliminamos la referencia.
-
+Pueden analizar qué variables externas utiliza realmente una función y eliminar
+aquellas que claramente no necesita.
 */
 
-fn = null;
 
 /*
+19. EFECTO DURANTE LA DEPURACIÓN EN V8
 
-Visualmente:
+En motores V8, utilizados por navegadores como Chrome, Edge y Opera según el
+contenido original, una variable externa que haya sido eliminada por una
+optimización puede dejar de estar disponible mientras se depura el código.
 
-Antes
-
-fn
-
-↓
-
-function()
-
-↓
-
-[[Environment]]
-
-↓
-
-{ value }
-
-Después
-
-fn = null
-
-↓
-
-No existen referencias
-
-↓
-
-Se elimina la función.
-
-↓
-
-También se elimina su entorno léxico.
-
-↓
-
-value desaparece de la memoria.
-
-El entorno léxico vive exactamente el mismo tiempo que alguna función
-pueda seguir utilizándolo.
-
-=========================================================
-OPTIMIZACIONES DE LOS MOTORES JAVASCRIPT
-=========================================================
-
-Hasta ahora hemos visto el comportamiento "teórico".
-
-En la práctica, los motores modernos como V8 (Chrome, Edge y Opera)
-realizan numerosas optimizaciones para ahorrar memoria.
-
-Si detectan que una variable nunca será utilizada por ninguna función,
-pueden eliminarla antes de tiempo.
-
-Todo esto ocurre internamente sin modificar el comportamiento del
-programa.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Un efecto curioso durante la depuración
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-En V8 existe una consecuencia interesante.
-
-Durante una sesión de depuración (Debugger), algunas variables que
-teóricamente deberían existir pueden haber sido optimizadas.
-
-Ejemplo:
-
+El siguiente ejemplo depende del navegador y de las herramientas de desarrollo.
+No se ejecuta automáticamente.
 */
 
-function example() {
-    let value = Math.random();
+function ejemploOptimizacionV8() {
+  let valor = Math.random();
 
-    function inner() {
-        debugger;
-    }
+  function inspeccionar() {
+    debugger;
 
-    return inner;
+    /*
+    Según el ejemplo original, al intentar evaluar:
+
+    alert(valor)
+
+    desde la consola durante la pausa, la variable puede no estar disponible
+    debido a una optimización del motor.
+    */
+  }
+
+  return inspeccionar;
 }
 
-let debugFunction = example();
-debugFunction();
 
 /*
+20. UNA VARIABLE EXTERNA DIFERENTE DURANTE LA DEPURACIÓN
 
-Si se pausa la ejecución y en la consola escribimos:
+Una consecuencia curiosa de estas optimizaciones es que durante la depuración
+podría encontrarse una variable más externa con el mismo nombre en lugar de
+la variable más cercana que fue optimizada.
 
-value
-
-es posible obtener:
-
-ReferenceError
-
-aunque, según la teoría, esa variable pertenezca al entorno léxico.
-
-¿Por qué?
-
-Porque V8 detectó que nunca iba a utilizarse y decidió eliminarla.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Otro efecto curioso
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+Este comportamiento pertenece a la depuración y no cambia las reglas normales
+de búsqueda de variables durante la ejecución del programa.
 */
 
-let value = "Surprise!";
+let valorGlobalDepuracion = "Surprise!";
 
-function outer() {
+function ejemploVariableDuranteDepuracion() {
+  let valorGlobalDepuracion = "the closest value";
 
-    let value = "Closest value";
+  function inspeccionar() {
+    debugger;
 
-    function inner() {
-        debugger;
-    }
+    /*
+    El ejemplo original muestra que, debido a una optimización de V8, durante
+    la depuración puede observarse una variable externa diferente de la que
+    teóricamente debería estar disponible.
+    */
+  }
 
-    return inner;
+  return inspeccionar;
 }
 
-let test = outer();
-test();
 
 /*
-
-En algunos casos, al inspeccionar "value" durante la depuración, puede
-aparecer la variable global en lugar de la local.
-
-Esto NO significa que JavaScript funcione incorrectamente.
-
-Simplemente es consecuencia de las optimizaciones internas del motor.
-
-Este comportamiento puede observarse principalmente en V8.
-
-=========================================================
 RESUMEN
-=========================================================
 
-- Un Closure (Clausura) es una función que recuerda el entorno léxico donde fue creada.
+1. Una variable declarada con let o const dentro de {...} solo es visible
+   dentro de ese bloque.
 
-- Todas las funciones de JavaScript son Closures de forma natural.
+2. if, for y while también crean ámbitos de bloque para las variables
+   declaradas con let o const.
 
-- Internamente utilizan una referencia oculta llamada [[Environment]].
+3. Una función puede contener otras funciones.
 
-- Gracias a ella pueden acceder a variables externas incluso después de que la función exterior haya terminado.
+4. Una función anidada puede acceder a las variables de funciones y entornos
+   exteriores.
 
-- Un Entorno Léxico permanece en memoria mientras alguna función pueda seguir utilizándolo.
+5. Cada función en ejecución, bloque y script tiene asociado conceptualmente
+   un Entorno Léxico.
 
-- Cuando desaparecen todas las referencias hacia esa función, el Recolector de Basura elimina 
-    automáticamente tanto la función como su entorno léxico.
+6. El Entorno Léxico contiene un Environment Record con las variables locales
+   y una referencia al entorno exterior.
 
-- Los motores modernos optimizan constantemente la memoria, por lo que durante la depuración 
-    algunas variables pueden no aparecer aunque conceptualmente pertenezcan al entorno léxico.
+7. Cuando JavaScript busca una variable, comienza por el Entorno Léxico actual
+   y continúa hacia los entornos exteriores.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-IDEA CLAVE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. Las Function Declaration se inicializan inmediatamente cuando se crea el
+   entorno correspondiente.
 
-Una función no recuerda únicamente su código.
+9. Cada llamada a una función crea un nuevo Entorno Léxico para sus parámetros
+   y variables locales.
 
-También recuerda el lugar donde fue creada.
+10. Toda función recuerda el Entorno Léxico donde fue creada mediante la
+    propiedad interna [[Environment]].
 
-Ese recuerdo del entorno léxico es precisamente lo que conocemos como
-Closure (Clausura).
+11. [[Environment]] se establece cuando se crea la función y permite que esta
+    acceda posteriormente a sus variables externas.
+
+12. Una variable se modifica en el Entorno Léxico donde está almacenada.
+
+13. Un cierre es una función que recuerda sus variables externas y puede
+    acceder a ellas.
+
+14. En JavaScript las funciones son cierres por naturaleza, salvo la excepción
+    relacionada con "new Function" mencionada en el contenido original.
+
+15. Si una función anidada sigue siendo accesible, también puede mantenerse en
+    memoria el Entorno Léxico al que hace referencia.
+
+16. Varias ejecuciones de una misma función crean entornos diferentes, por lo
+    que pueden producir cierres independientes.
+
+17. Cuando un Entorno Léxico deja de ser accesible, puede eliminarse de memoria.
+
+18. Los motores pueden optimizar y eliminar variables externas que no se
+    utilizan.
+
+19. En V8 estas optimizaciones pueden producir comportamientos particulares
+    al inspeccionar variables durante la depuración.
 */
+
+
+/*
+ACTIVACIÓN MANUAL
+
+Descomenta solamente el ejemplo que quieras probar.
+
+Los ejemplos que utilizan alert dependen del navegador.
+Los ejemplos con debugger están pensados para ejecutarse con las herramientas
+de desarrollo abiertas.
+*/
+
+// ejemploAlcanceDeBloque();
+// ejemploBloquesIndependientes();
+// ejemploDeclaracionDuplicada();
+// ejemploAlcanceEnIf();
+// ejemploAlcanceEnFor();
+// ejemploFuncionAnidada();
+// ejemploContador();
+// ejemploInicializacionLet();
+// ejemploDeclaracionDeFuncion();
+// ejemploBusquedaDeVariables();
+// ejemploPersistenciaDelContador();
+// ejemploContadoresIndependientes();
+// ejemploCierre();
+// ejemploEntornoConservado();
+// ejemploVariosEntornos();
+// ejemploLiberacionDeEntorno();
+
+// const funcionParaDepurar = ejemploOptimizacionV8();
+// funcionParaDepurar();
+
+// const otraFuncionParaDepurar = ejemploVariableDuranteDepuracion();
+// otraFuncionParaDepurar();
