@@ -1,1886 +1,473 @@
 /*
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                    PLANIFICACIÓN: setTimeout Y setInterval                 ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+PROGRAMACIÓN: setTimeout Y setInterval
 
-JavaScript permite programar una función para que se ejecute:
+JavaScript permite programar la ejecución de una función para un momento posterior.
 
-    - Después de cierto tiempo.
-    - Repetidamente cada cierto intervalo.
+Existen dos métodos principales:
 
-A esto lo llamamos:
+- setTimeout: ejecuta una función una sola vez después de un retraso.
+- setInterval: ejecuta una función repetidamente después de un intervalo determinado.
 
-    "planificar una llamada"
-
-Los dos métodos principales son:
-
-    setTimeout()
-        → ejecuta una función UNA vez después de un retraso.
-
-    setInterval()
-        → ejecuta una función REPETIDAMENTE cada cierto intervalo.
-
-
-IMPORTANTE:
-
-Estos métodos no forman parte del lenguaje JavaScript puro.
-
-Son proporcionados por el entorno donde se ejecuta JavaScript.
-
-Por ejemplo:
-
-    Navegadores → Web APIs / HTML Standard
-    Node.js     → APIs del entorno de Node.js
-
-Por eso podemos utilizarlos tanto en:
-
-    Browser
-    Node.js
+Estos métodos no forman parte de la especificación de JavaScript, pero están disponibles
+en la mayoría de los entornos, incluidos los navegadores y Node.js.
 */
 
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 1. setTimeout()
-// ═════════════════════════════════════════════════════════════════════════════
-
 /*
-"setTimeout" permite ejecutar una función UNA sola vez
-después de un determinado retraso.
-
+1. setTimeout
 
 Sintaxis:
 
-    setTimeout(func, delay, arg1, arg2, ...)
+setTimeout(func, delay, arg1, arg2, ...)
 
+Parámetros:
 
-Donde:
+- func: función que se ejecutará.
+- delay: retraso en milisegundos antes de ejecutar la función. Por defecto es 0.
+- arg1, arg2, ...: argumentos que serán enviados a la función.
 
-    func
-        → función que queremos ejecutar.
-
-    delay
-        → tiempo de espera en milisegundos.
-
-    arg1, arg2, ...
-        → argumentos que se pasarán a la función.
-
-
-IMPORTANTE:
-
-    1000 ms = 1 segundo
-
-    2000 ms = 2 segundos
-
-    500 ms  = 0.5 segundos
+Aunque históricamente se puede pasar una cadena de código en lugar de una función,
+no se recomienda hacerlo.
 */
 
+function ejemploSetTimeoutBasico() {
+  function saludar() {
+    alert("Hola");
+  }
 
-function sayHi() {
-
-    console.log("Hola");
-
+  // La función se ejecutará aproximadamente después de 1 segundo.
+  setTimeout(saludar, 1000);
 }
 
-
-// Ejecutar "sayHi" después de 1 segundo.
-setTimeout(sayHi, 1000);
-
-
 /*
-El código anterior significa:
+Es importante pasar la referencia de la función, no ejecutarla inmediatamente.
 
-    "Ejecuta sayHi dentro de aproximadamente 1000 ms."
+Correcto:
 
+setTimeout(saludar, 1000);
 
-NO significa:
+Incorrecto:
 
-    "Detén JavaScript durante 1000 ms."
+setTimeout(saludar(), 1000);
 
-
-setTimeout NO bloquea la ejecución del programa.
-
-La función queda programada y JavaScript continúa
-ejecutando el resto del código.
+En el segundo caso, saludar() se ejecuta inmediatamente y su valor de retorno
+se pasa a setTimeout. Si la función no devuelve nada, ese valor será undefined.
 */
 
+function ejemploSetTimeoutConArgumentos() {
+  function saludar(frase, persona) {
+    alert(frase + ", " + persona);
+  }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 2. setTimeout CON UNA FUNCIÓN ANÓNIMA
-// ═════════════════════════════════════════════════════════════════════════════
+  setTimeout(saludar, 1000, "Hola", "John");
+}
 
 /*
-También podemos pasar directamente una función.
+También podría pasarse una cadena:
+
+setTimeout("alert('Hola')", 1000);
+
+Sin embargo, se recomienda utilizar una función, por ejemplo:
+
+setTimeout(() => alert("Hola"), 1000);
 */
 
-
-setTimeout(function () {
-
-    console.log("Hola después de 2 segundos");
-
-}, 2000);
-
+function ejemploFuncionFlecha() {
+  setTimeout(() => alert("Hola"), 1000);
+}
 
 /*
-Y normalmente utilizamos una arrow function:
-*/
+2. CANCELAR setTimeout
 
+setTimeout devuelve un identificador de temporizador.
 
-setTimeout(() => {
-
-    console.log("Hola después de 3 segundos");
-
-}, 3000);
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 3. LOS MILISEGUNDOS
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-El segundo argumento representa milisegundos.
-
-Ejemplos:
-*/
-
-
-setTimeout(() => console.log("500 ms"), 500);
-
-setTimeout(() => console.log("1 segundo"), 1000);
-
-setTimeout(() => console.log("2 segundos"), 2000);
-
-setTimeout(() => console.log("5 segundos"), 5000);
-
-
-/*
-Podemos recordar:
-
-    1000 ms = 1 s
-    60.000 ms = 60 s = 1 min
-
-
-Si omitimos el delay:
-
-    setTimeout(func)
-
-el valor predeterminado es aproximadamente 0 ms.
-
-Pero "0 ms" NO significa que la función se ejecute inmediatamente.
-
-Lo veremos más adelante.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 4. setTimeout() CON ARGUMENTOS
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-También podemos pasar argumentos a la función.
+Ese identificador puede utilizarse con clearTimeout para impedir que la función
+programada llegue a ejecutarse.
 
 Sintaxis:
 
-    setTimeout(func, delay, arg1, arg2, ...)
+const timerId = setTimeout(...);
+clearTimeout(timerId);
 
-
-Ejemplo:
+Después de cancelar el temporizador, su identificador no cambia ni se convierte
+automáticamente en null.
 */
 
+function ejemploCancelarTimeout() {
+  const timerId = setTimeout(() => {
+    alert("Esto nunca debería mostrarse");
+  }, 1000);
 
-function greet(phrase, name) {
-
-    console.log(`${phrase}, ${name}!`);
-
+  clearTimeout(timerId);
 }
 
-
-setTimeout(
-    greet,
-    1000,
-    "Hola",
-    "Yvnir"
-);
-
-
 /*
-Después de 1 segundo se ejecutará:
+En un navegador, el identificador del temporizador suele ser un número.
 
-    greet("Hola", "Yvnir");
+En otros entornos puede tener otra forma. Por ejemplo, Node.js devuelve un objeto
+temporizador con métodos adicionales.
 
-
-Es decir:
-
-    setTimeout(
-        función,
-        retraso,
-        argumento1,
-        argumento2
-    );
-
-
-Los argumentos son entregados a la función
-cuando llega el momento de ejecutarla.
+No existe una especificación universal de JavaScript que determine el tipo exacto
+del identificador.
 */
 
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 5. NO PASAR LA FUNCIÓN CON ()
-// ═════════════════════════════════════════════════════════════════════════════
-
 /*
-Este es uno de los errores más comunes al comenzar.
+3. setInterval
 
+setInterval utiliza prácticamente la misma sintaxis que setTimeout:
 
-CORRECTO:
+setInterval(func, delay, arg1, arg2, ...)
+
+La diferencia es que la función se ejecuta repetidamente después del intervalo
+especificado.
+
+Para detener las futuras ejecuciones se utiliza:
+
+clearInterval(timerId);
 */
 
-
-setTimeout(sayHi, 1000);
-
-
-/*
-Aquí estamos pasando la REFERENCIA a la función.
-
-Es decir:
-
-    "setTimeout, aquí tienes esta función.
-    Ejecútala después."
-
-
-INCORRECTO:
-*/
-
-
-// setTimeout(sayHi(), 1000);
-
-
-/*
-¿Por qué?
-
-Porque:
-
-    sayHi()
-
-significa:
-
-    "ejecuta sayHi AHORA"
-
-
-Entonces JavaScript hace conceptualmente:
-
-    let result = sayHi();
-
-    setTimeout(result, 1000);
-
-
-Pero "sayHi" no devuelve nada.
-
-Por lo tanto:
-
-    result === undefined
-
-
-Y "setTimeout" recibe:
-
-    undefined
-
-en lugar de una función.
-
-
-REGLA IMPORTANTE:
-
-    setTimeout(sayHi, 1000)
-                ↑
-            referencia
-
-
-    setTimeout(sayHi(), 1000)
-                ↑
-            ejecución inmediata
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 6. ¿Y SI NECESITAMOS ARGUMENTOS?
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Una forma correcta es utilizar los argumentos de setTimeout:
-*/
-
-
-setTimeout(greet, 1000, "Hola", "Juan");
-
-
-/*
-También podemos utilizar una arrow function:
-*/
-
-
-setTimeout(() => {
-
-    greet("Hola", "Juan");
-
-}, 1000);
-
-
-/*
-Ambas formas son válidas.
-
-La segunda es especialmente útil cuando necesitamos
-hacer algo más complejo antes de llamar a la función.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 7. PASAR UN STRING DE CÓDIGO
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Por razones históricas, también podemos hacer esto:
-*/
-
-
-setTimeout("console.log('Hola')", 1000);
-
-
-/*
-JavaScript interpreta el string como código.
-
-Esto es similar conceptualmente a:
-
-    new Function(...)
-
-
-Sin embargo:
-
-    - NO es recomendable.
-
-
-Es mucho mejor pasar una función:
-*/
-
-
-setTimeout(() => {
-
-    console.log("Hola");
-
-}, 1000);
-
-
-/*
-REGLA:
-
-    X setTimeout("código", 1000)
-
-    -(yes) setTimeout(() => { código }, 1000)
-
-
-No necesitamos convertir strings en código
-cuando podemos pasar directamente una función.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 8. setTimeout() DEVUELVE UN IDENTIFICADOR
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Cuando llamamos a setTimeout:
-
-    setTimeout(...)
-
-el método devuelve un identificador del temporizador.
-
-Podemos guardarlo:
-*/
-
-
-let timerId = setTimeout(() => {
-
-    console.log("Esto podría ejecutarse");
-
-}, 5000);
-
-
-console.log(timerId);
-
-
-/*
-En navegadores normalmente veremos un número.
-
-Por ejemplo:
-
-    1
-    2
-    3
-    ...
-
-
-Pero esto NO está garantizado en todos los entornos.
-
-Por ejemplo, Node.js utiliza objetos de temporizador.
-
-Lo importante es:
-
-    timerId
-
-identifica ese temporizador.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 9. clearTimeout()
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Podemos cancelar un setTimeout utilizando:
-
-    clearTimeout(timerId)
-
-
-Ejemplo:
-*/
-
-
-let cancelableTimer = setTimeout(() => {
-
-    console.log("NO debería aparecer");
-
-}, 3000);
-
-
-// Cancelamos el temporizador.
-clearTimeout(cancelableTimer);
-
-
-/*
-Como lo cancelamos antes de que se ejecute,
-el mensaje nunca aparecerá.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 10. EL ID NO SE CONVIERTE EN null
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Después de cancelar un temporizador:
-
-    clearTimeout(timerId)
-
-la variable sigue teniendo el mismo valor.
-*/
-
-
-let timer = setTimeout(() => {
-
-    console.log("Hola");
-
-}, 1000);
-
-
-console.log(timer);
-
-clearTimeout(timer);
-
-console.log(timer);
-
-
-/*
-El identificador no se transforma automáticamente en:
-
-    null
-    undefined
-
-
-La variable sigue almacenando el identificador.
-
-Cancelar el temporizador y modificar nuestra variable
-son cosas diferentes.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 11. setInterval()
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-"setInterval" funciona de manera parecida a "setTimeout",
-pero en lugar de ejecutar la función una sola vez,
-la ejecuta repetidamente.
-
-
-Sintaxis:
-
-    setInterval(func, delay, arg1, arg2, ...)
-
-
-Ejemplo:
-*/
-
-
-let intervalId = setInterval(() => {
-
-    console.log("tick");
-
-}, 2000);
-
-
-/*
-Esto produce aproximadamente:
-
-    tick
-    2 segundos
-    tick
-    2 segundos
-    tick
-    2 segundos
-    ...
-
-
-Y continúa hasta que lo detengamos.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 12. clearInterval()
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Para detener un setInterval:
-
-    clearInterval(intervalId)
-*/
-
-
-let interval = setInterval(() => {
-
-    console.log("tick");
-
-}, 1000);
-
-
-// Después de 5 segundos detenemos el intervalo.
-setTimeout(() => {
-
-    clearInterval(interval);
-
-    console.log("Intervalo detenido");
-
-}, 5000);
-
-
-/*
-Tenemos aquí una combinación interesante:
-
-    setInterval()
-        ↓
-    ejecuta repetidamente
-
-
-    setTimeout()
-        ↓
-    después de 5 segundos
-
-
-    clearInterval()
-        ↓
-    detiene el intervalo
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 13. DIFERENCIA ENTRE setTimeout Y setInterval
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ setTimeout                                                                  │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-Ejecuta una función una sola vez.
-
-    setTimeout(func, 1000);
-
-    espera aproximadamente 1 segundo
-    ↓
-    ejecuta func()
-    ↓
-    termina
-
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ setInterval                                                                 │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-Ejecuta una función repetidamente.
-
-    setInterval(func, 1000);
-
-    espera aproximadamente 1 segundo
-    ↓
-    ejecuta func()
-    ↓
-    espera aproximadamente 1 segundo
-    ↓
-    ejecuta func()
-    ↓
-    ...
-
-
-Para detenerlo:
-
-    clearInterval(timerId)
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 14. setInterval + setTimeout PARA DETENERLO
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Ejemplo completo:
-*/
-
-
-let ticks = 0;
-
-let ticker = setInterval(() => {
-
-    ticks++;
-
-    console.log(`Tick ${ticks}`);
-
-}, 1000);
-
-
-setTimeout(() => {
-
-    clearInterval(ticker);
-
-    console.log("Fin");
-
-}, 5000);
-
-
-/*
-Aproximadamente veremos:
-
-    Tick 1
-    Tick 2
-    Tick 3
-    Tick 4
-    Fin
-
-
-Dependiendo del entorno y de la carga,
-los tiempos reales pueden variar.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 15. LOS TEMPORIZADORES NO SON RELOJES EXACTOS
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-IMPORTANTE:
-
-    setTimeout(func, 1000)
-
-NO significa:
-
-    "ejecuta exactamente 1000 ms después"
-
-
-Significa aproximadamente:
-
-    "no ejecutes la función antes de ese retraso mínimo;
-    ejecútala cuando el entorno pueda hacerlo después."
-
-
-Puede existir trabajo pendiente antes de nuestra función.
-
-Por ejemplo:
-*/
-
-
-console.log("A");
-
-setTimeout(() => {
-
-    console.log("B");
-
-}, 0);
-
-console.log("C");
-
-
-/*
-El resultado será:
-
-    A
-    C
-    B
-
-
-NO:
-
-    A
-    B
-    C
-
-
-¿Por qué?
-
-Porque setTimeout no interrumpe el código actual.
-
-Primero termina el código que se está ejecutando.
-
-Después el entorno puede ejecutar la función programada.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 16. setTimeout(..., 0)
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Un caso especial:
-
-    setTimeout(func, 0)
-
-
-Significa:
-
-    "programa esta función para ejecutarla
-    lo antes posible después de que termine
-    el código actual."
-
-
-Ejemplo:
-*/
-
-
-setTimeout(() => {
-
-    console.log("Mundo");
-
-}, 0);
-
-
-console.log("Hola");
-
-
-/*
-Resultado:
-
-    Hola
-    Mundo
-
-
-Aunque escribimos primero el setTimeout,
-"Hola" aparece primero.
-
-
-¿Por qué?
-
-Porque:
-
-    setTimeout(..., 0)
-
-no ejecuta inmediatamente la función.
-
-
-La coloca para ejecutarla posteriormente.
-
-
-Podemos imaginarlo así:
-
-    Código actual
-        │
-        ▼
-    console.log("Hola")
-        │
-        ▼
-    termina el script actual
-        │
-        ▼
-    función programada
-        │
-        ▼
-    console.log("Mundo")
-
-
-Este comportamiento está relacionado con el
-EVENT LOOP de JavaScript.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 17. setInterval Y alert()
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Un detalle interesante de los navegadores:
-
-    alert()
-    confirm()
-    prompt()
-
-pueden bloquear la interacción normal de la página.
-
-El comportamiento exacto de los temporizadores
-mientras una ventana modal está abierta depende del entorno.
-
-
-Por ejemplo:
-*/
-
-
-let alertInterval = setInterval(() => {
-
-    console.log("tick");
-
-}, 2000);
-
-
-/*
-Si ejecutamos un alert durante un tiempo,
-el comportamiento observable del intervalo
-puede no coincidir exactamente con 2000 ms entre mensajes.
-
-
-Por eso no debemos utilizar setInterval
-como un reloj de precisión.
-*/
-
-
-setTimeout(() => {
-
-    clearInterval(alertInterval);
-
-}, 10000);
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 18. setTimeout ANIDADO
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Existe otra forma de repetir una operación:
-
-    setTimeout()
-
-que vuelve a programar otro setTimeout.
-
-
-Ejemplo:
-*/
-
-
-let nestedTimer = setTimeout(function tick() {
-
-    console.log("tick");
-
-    nestedTimer = setTimeout(tick, 2000);
-
-}, 2000);
-
-
-/*
-El comportamiento es:
-
-    setTimeout
-        │
-        ▼
-    tick()
-        │
-        ▼
-    setTimeout
-        │
-        ▼
-    tick()
-        │
-        ▼
-    setTimeout
-        │
-        ▼
-        ...
-
-
-La siguiente ejecución se programa
-DESPUÉS de terminar la ejecución actual.
-*/
-
-
-// Para detenerlo podemos cancelar el último timer.
-setTimeout(() => {
-
-    clearTimeout(nestedTimer);
-
-}, 10000);
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 19. setInterval VS setTimeout ANIDADO
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Las dos técnicas permiten repetir una función.
-
-Pero existe una diferencia importante.
-
-
-CON setInterval:
-
-    setInterval(func, 100);
-
-
-Conceptualmente:
-
-    ┌─────────┐
-    │  100ms  │
-    └────┬────┘
-        ▼
-    func()
-        │
-        └───────► próximo intervalo
-                    │
-                    ▼
-                func()
-
-
-El intervalo intenta mantener una frecuencia
-determinada.
-
-
-Con setTimeout anidado:
-
-    setTimeout(function run() {
-
-        func();
-
-        setTimeout(run, 100);
-
-    }, 100);
-
-
-Tenemos:
-
-    espera 100ms
-        │
-        ▼
-    func()
-        │
-        │ termina
-        ▼
-    espera 100ms
-        │
-        ▼
-    func()
-        │
-        ▼
-        ...
-
-
-La espera comienza DESPUÉS de que termine
-la ejecución anterior.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 20. EJEMPLO PARA VER LA DIFERENCIA
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Supongamos que "func" tarda 50 ms en ejecutarse.
-
-Con setInterval:
-
-    espera 100 ms
-    ejecuta func durante 50 ms
-    siguiente intervalo...
-
-
-El tiempo entre comienzos puede aproximarse
-al intervalo establecido, pero la ejecución consume tiempo.
-
-
-Con setTimeout anidado:
-
-    espera 100 ms
-    ejecuta func durante 50 ms
-    espera 100 ms
-    ejecuta func...
-
-
-Por lo tanto, tenemos:
-
-    100 ms de espera
-    +
-    tiempo de ejecución
-
-
-entre el final de una ejecución y el comienzo de la siguiente.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 21. EL GRAN PROBLEMA DE setInterval
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Imaginemos:
-
-    setInterval(func, 100);
-
-
-Pero "func" tarda 150 ms en ejecutarse.
-
-
-El intervalo es:
-
-    100 ms
-
-
-pero la función tarda:
-
-    150 ms
-
-
-La función no puede ejecutarse simultáneamente
-consigo misma simplemente porque llegó otro intervalo.
-
-El entorno debe esperar a que termine la ejecución actual.
-
-
-Por eso "setInterval" NO garantiza que func
-se ejecute exactamente cada X milisegundos.
-
-
-El tiempo real depende también de:
-
-    - duración de func
-    - código que esté ejecutándose
-    - carga del entorno
-    - event loop
-    - restricciones del navegador
-
-
-IMPORTANTE:
-
-Los temporizadores proporcionan una programación aproximada,
-no un reloj de precisión.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 22. VENTAJA DEL setTimeout ANIDADO
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-El setTimeout anidado permite controlar mejor
-el retraso entre ejecuciones.
-
-
-Ejemplo:
-*/
-
-
-function runTask() {
-
-    console.log("Ejecutando tarea");
-
-    // Aquí podríamos realizar una operación.
-
-    setTimeout(runTask, 1000);
+function ejemploSetInterval() {
+  const timerId = setInterval(() => {
+    alert("tick");
+  }, 2000);
+
+  setTimeout(() => {
+    clearInterval(timerId);
+    alert("stop");
+  }, 5000);
 }
 
-
-setTimeout(runTask, 1000);
-
-
 /*
-La siguiente ejecución se programa DESPUÉS
-de la ejecución actual.
+En el ejemplo anterior:
 
-Esto garantiza que haya un retraso de aproximadamente
-1000 ms entre el final de una ejecución
-y el comienzo de la siguiente.
+1. "tick" se programa repetidamente cada 2 segundos.
+2. Después de aproximadamente 5 segundos se ejecuta el setTimeout.
+3. clearInterval detiene las futuras llamadas.
+4. Se muestra "stop".
 
+En la mayoría de los navegadores, el temporizador interno continúa contando mientras
+se muestran ventanas como alert, confirm o prompt.
 
-Esto es especialmente útil cuando:
-
-    - La operación tarda una cantidad variable de tiempo.
-    - Queremos ajustar dinámicamente el delay.
-    - Estamos realizando solicitudes a un servidor.
-    - Queremos evitar ejecutar una operación mientras
-    la anterior todavía está en curso.
+Por eso, si una alerta permanece abierta durante suficiente tiempo, la siguiente
+ejecución del intervalo puede producirse inmediatamente después de cerrarla.
 */
 
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 23. RETRASO DINÁMICO
-// ═════════════════════════════════════════════════════════════════════════════
-
 /*
-Una gran ventaja del setTimeout anidado
-es que podemos modificar el delay.
+4. setTimeout ANIDADO
 
-Ejemplo:
+Existen dos formas de ejecutar una tarea regularmente:
 
-    5 segundos
-    ↓
-    si falla → 10 segundos
-    ↓
-    si vuelve a fallar → 20 segundos
-    ↓
-    si vuelve a fallar → 40 segundos
+- setInterval.
+- Programar un nuevo setTimeout al finalizar cada ejecución.
 
-
-Esto se conoce como:
-
-    exponential backoff
-
-Es muy utilizado en sistemas de red.
+El segundo enfoque se denomina setTimeout anidado.
 */
 
+function ejemploTimeoutAnidado() {
+  let timerId;
+
+  timerId = setTimeout(function ejecutar() {
+    alert("tick");
+
+    timerId = setTimeout(ejecutar, 2000);
+  }, 2000);
+}
+
+/*
+La siguiente llamada se programa al final de la ejecución actual.
+
+Esto hace que setTimeout anidado sea más flexible que setInterval, porque el retraso
+de la siguiente ejecución puede cambiar según el resultado de la ejecución actual.
+*/
+
+/*
+Por ejemplo, un servicio podría comenzar realizando solicitudes cada 5 segundos.
+
+Si el servidor se encuentra sobrecargado, el retraso podría aumentarse progresivamente:
+
+5 segundos -> 10 segundos -> 20 segundos -> 40 segundos
+
+El contenido original lo representa con el siguiente pseudocódigo:
 
 let delay = 5000;
 
+let timerId = setTimeout(function request() {
+  ...enviar solicitud...
 
-function request() {
-
-    console.log("Intentando realizar una solicitud...");
-
-
-    /*
-    Aquí imaginamos que hacemos una petición
-    a un servidor.
-
-    Si el servidor está sobrecargado:
-
-        delay *= 2;
-
-    De esta manera:
-
-        5000
-        10000
-        20000
-        40000
-        ...
-    */
-
-
-    // Ejemplo conceptual:
-    let serverOverloaded = false;
-
-
-    if (serverOverloaded) {
-
-        delay *= 2;
-
-    }
-
-
-    // Programamos el siguiente intento.
-    setTimeout(request, delay);
-}
-
-
-// Primer intento.
-setTimeout(request, delay);
-
-
-/*
-Esto sería mucho más difícil de controlar
-con un setInterval fijo.
-
-Con setTimeout podemos decidir el delay
-de la siguiente ejecución en cada iteración.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 24. setTimeout ANIDADO PERMITE ADAPTARSE
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Podemos cambiar el tiempo dependiendo
-del resultado de la operación.
-
-
-Ejemplo:
-*/
-
-
-let delayExample = 1000;
-
-
-function process() {
-
-    console.log("Procesando...");
-
-
-    let success = Math.random() > 0.5;
-
-
-    if (success) {
-
-        console.log("Éxito");
-
-        // Volvemos al intervalo normal.
-        delayExample = 1000;
-
-    } else {
-
-        console.log("Falló");
-
-        // Aumentamos el tiempo de espera.
-        delayExample *= 2;
-    }
-
-
-    setTimeout(process, delayExample);
-}
-
-
-setTimeout(process, delayExample);
-
-
-/*
-Esto demuestra una ventaja importante:
-
-    setInterval
-        → intervalo fijo
-
-    setTimeout anidado
-        → intervalo configurable en cada ejecución
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 25. RECOLECCIÓN DE BASURA Y TEMPORIZADORES
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Los temporizadores mantienen referencias a las funciones
-que tienen programadas.
-
-
-Por ejemplo:
-*/
-
-
-setTimeout(() => {
-
-    console.log("Hola");
-
-}, 10000);
-
-
-/*
-Mientras el temporizador esté pendiente,
-el entorno necesita mantener accesible
-la función callback para poder ejecutarla.
-
-
-Por lo tanto, la función no puede ser recolectada
-por el Garbage Collector simplemente porque
-nosotros no tengamos otra referencia directa a ella.
-
-
-Esto también puede mantener vivo el entorno léxico
-que la función utiliza.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 26. CLOSURES + TEMPORIZADORES
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Recordemos que una función puede mantener
-referencias a su entorno léxico.
-*/
-
-
-function createTimer() {
-
-    let largeData = new Array(1000000).fill("*");
-
-
-    setTimeout(() => {
-
-        console.log(largeData.length);
-
-    }, 10000);
-}
-
-
-createTimer();
-
-
-/*
-Aunque createTimer() termine,
-el callback todavía necesita acceder a:
-
-    largeData
-
-
-Por lo tanto, el entorno relacionado con esa función
-debe mantenerse disponible mientras el callback
-siga siendo necesario.
-
-
-Por eso debemos cancelar los temporizadores
-cuando ya no los necesitamos,
-especialmente si mantienen referencias a datos grandes.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 27. CANCELAR CUANDO YA NO ES NECESARIO
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Un patrón común es guardar el identificador
-para poder cancelar el temporizador posteriormente.
-*/
-
-
-let timerToCancel = setTimeout(() => {
-
-    console.log("Ejecutando...");
-
-}, 10000);
-
-
-// Cuando ya no lo necesitamos:
-clearTimeout(timerToCancel);
-
-
-/*
-Con intervalos es todavía más importante:
-
-    setInterval(...)
-        ↓
-    guardar ID
-        ↓
-    clearInterval(ID)
-
-
-Si olvidamos cancelar un intervalo,
-puede continuar ejecutándose indefinidamente.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 28. EL DELAY CERO NO ES REALMENTE CERO
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-En el navegador existe una particularidad:
-
-    setTimeout(func, 0)
-
-
-no significa que func se ejecute inmediatamente.
-
-Primero debe terminar el código actual.
-
-
-Además, los navegadores aplican restricciones
-a los temporizadores anidados.
-
-
-Después de cierto número de temporizadores anidados,
-el navegador fuerza un retraso mínimo.
-
-
-Históricamente, este mínimo es de aproximadamente:
-
-    4 ms
-
-
-para determinados temporizadores anidados.
-
-
-Por eso algo como:
-*/
-
-
-let count = 0;
-
-let start = Date.now();
-
-
-function run() {
-
-    count++;
-
-
-    if (Date.now() - start >= 100) {
-
-        console.log("Ejecuciones:", count);
-
-        return;
-    }
-
-
-    setTimeout(run, 0);
-}
-
-
-setTimeout(run, 0);
-
-
-/*
-NO significa que "run" pueda ejecutarse infinitamente
-sin ningún retraso real.
-
-
-El navegador aplica sus propias reglas
-para los temporizadores.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 29. IMPORTANTE: LOS TEMPORIZADORES NO BLOQUEAN
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Consideremos:
-*/
-
-
-console.log("Inicio");
-
-
-setTimeout(() => {
-
-    console.log("Temporizador");
-
-}, 2000);
-
-
-console.log("Fin");
-
-
-/*
-Resultado:
-
-    Inicio
-    Fin
-    Temporizador
-
-
-El setTimeout no detiene JavaScript durante 2 segundos.
-
-
-El flujo es:
-
-    console.log("Inicio")
-            ↓
-    programar callback
-            ↓
-    continuar ejecución
-            ↓
-    console.log("Fin")
-            ↓
-    ...
-            ↓
-    cuando sea posible:
-            ↓
-    ejecutar callback
-
-
-Esto es una idea FUNDAMENTAL para comprender
-la asincronía en JavaScript.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 30. setTimeout NO ES "DORMIR" EL PROGRAMA
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-No debemos pensar:
-
-    setTimeout(..., 5000)
-
-como:
-
-    "JavaScript duerme durante 5 segundos."
-
-
-La forma correcta de pensarlo es:
-
-    "Programa este callback para que pueda ejecutarse
-    después de aproximadamente 5 segundos."
-
-
-Mientras tanto, JavaScript puede continuar con otras tareas.
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 31. RESUMEN
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ setTimeout                                                                  │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-Ejecuta una función una vez después de un delay:
-
-    setTimeout(func, delay);
-
-
-Ejemplo:
-
-    setTimeout(() => {
-        console.log("Hola");
-    }, 1000);
-
-
-Para cancelar:
-
-    let timerId = setTimeout(...);
-
-    clearTimeout(timerId);
-
-
-──────────────────────────────────────────────────────────────────────────────
-
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ setInterval                                                                 │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-Ejecuta una función repetidamente:
-
-    let timerId = setInterval(func, delay);
-
-
-Para cancelar:
-
-    clearInterval(timerId);
-
-
-──────────────────────────────────────────────────────────────────────────────
-
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ REFERENCIA VS EJECUCIÓN                                                     │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-CORRECTO:
-
-    setTimeout(sayHi, 1000);
-
-
-INCORRECTO:
-
-    setTimeout(sayHi(), 1000);
-
-
-Porque:
-
-    sayHi
-
-es una referencia a la función.
-
-
-Mientras:
-
-    sayHi()
-
-ejecuta la función inmediatamente.
-
-
-──────────────────────────────────────────────────────────────────────────────
-
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ setTimeout(..., 0)                                                          │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-No significa "ejecutar inmediatamente".
-
-Significa:
-
-    "programar para ejecutarlo lo antes posible
-    después de que termine el código actual."
-
-
-Ejemplo:
-
-    setTimeout(() => console.log("B"), 0);
-
-    console.log("A");
-
-
-Resultado:
-
-    A
-    B
-
-
-──────────────────────────────────────────────────────────────────────────────
-
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ setInterval VS setTimeout ANIDADO                                           │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-setInterval:
-
-    setInterval(func, 100);
-
-
-Intenta ejecutar la función periódicamente.
-
-
-setTimeout anidado:
-
-    setTimeout(function run() {
-
-        func();
-
-        setTimeout(run, 100);
-
-    }, 100);
-
-
-La siguiente ejecución se programa después
-de que termine la anterior.
-
-
-Por eso setTimeout anidado permite:
-
-    - Cambiar el delay dinámicamente.
-    - Esperar a que termine la operación anterior.
-    - Implementar reintentos.
-    - Implementar exponential backoff.
-    - Controlar mejor el tiempo entre ejecuciones.
-
-
-──────────────────────────────────────────────────────────────────────────────
-
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ TEMPORIZADORES Y MEMORIA                                                    │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-Los temporizadores mantienen referencias a sus callbacks
-mientras están pendientes.
-
-Por lo tanto, un callback puede mantener vivo
-su entorno léxico y las variables que utiliza.
-
-
-Cuando ya no necesitamos un temporizador:
-
-    clearTimeout(timerId)
-
-o:
-
-    clearInterval(timerId)
-
-
-──────────────────────────────────────────────────────────────────────────────
-
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ LOS TEMPORIZADORES NO SON EXACTOS                                           │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-    setTimeout(func, 1000)
-
-
-NO significa:
-
-    "ejecuta exactamente después de 1000 ms."
-
-
-Significa aproximadamente:
-
-    "no antes de ese tiempo y cuando el entorno
-    pueda ejecutar el callback."
-
-
-El momento real depende de:
-
-    - código que se esté ejecutando
-    - event loop
-    - carga del sistema
-    - navegador / Node.js
-    - restricciones del entorno
-
-
-──────────────────────────────────────────────────────────────────────────────
-
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ IDEA PRINCIPAL                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-setTimeout:
-
-    UNA ejecución
-        │
-        ▼
-    delay
-        │
-        ▼
-    callback
-
-
-setInterval:
-
-    delay
-    │
-    ▼
-    callback
-    │
-    ▼
-    delay
-    │
-    ▼
-    callback
-    │
-    ▼
-    ...
-
-
-setTimeout anidado:
-
-    delay
-    │
-    ▼
-    callback
-    │
-    ▼
-    nuevo delay
-    │
-    ▼
-    callback
-    │
-    ▼
-    ...
-
-
-La diferencia fundamental:
-
-    setInterval
-        → intervalo periódico.
-
-    setTimeout anidado
-        → siguiente ejecución programada después
-        de que termina la actual.
-
-
-Y una idea especialmente importante:
-
-    setTimeout NO bloquea JavaScript.
-
-
-    setTimeout(func, 0)
-
-    ≠
-
-    "ejecuta func ahora"
-
-
-    significa:
-
-    "ejecuta func cuando termine el código actual
-    y el entorno pueda procesarlo."
-*/
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 32. EJEMPLO FINAL INTEGRADOR
-// ═════════════════════════════════════════════════════════════════════════════
-
-/*
-Vamos a combinar:
-
-    - setTimeout
-    - clearTimeout
-    - setInterval
-    - clearInterval
-    - setTimeout anidado
-    - callback
-    - delay dinámico
-*/
-
-
-let attempt = 0;
-let delay = 1000;
-
-
-function performTask() {
-
-    attempt++;
-
-    console.log(`Intento #${attempt}`);
-
-
-    // Simulamos un resultado.
-    let success = Math.random() > 0.5;
-
-
-    if (success) {
-
-        console.log("Tarea completada.");
-
-        return;
-    }
-
-
-    console.log("Falló. Reintentando...");
-
-
-    // Aumentamos el tiempo de espera.
+  if (la solicitud falló por sobrecarga del servidor) {
     delay *= 2;
+  }
 
+  timerId = setTimeout(request, delay);
+}, delay);
 
-    // Programamos el siguiente intento.
-    setTimeout(performTask, delay);
-}
-
-
-// Primer intento.
-setTimeout(performTask, delay);
-
+La próxima ejecución puede decidirse usando el resultado de la ejecución anterior.
+*/
 
 /*
-Este patrón es muy importante en aplicaciones reales.
+5. DIFERENCIA DE TIEMPO ENTRE setInterval Y setTimeout ANIDADO
+
+Con setInterval, el tiempo empleado por la función forma parte del intervalo.
 
 Conceptualmente:
 
-    intento
-    │
-    ▼
-    ¿éxito?
-    /       \
-    sí     no
-    │       │
-    ▼       ▼
-    fin    aumentar delay
-            │
-            ▼
-        setTimeout()
-            │
-            ▼
-        intento
+setInterval(function () {
+  funcion();
+}, 100);
 
+El planificador intenta ejecutar funcion() cada 100 ms.
 
-Este patrón permite crear sistemas de reintento
-sin ejecutar constantemente la operación.
+Si funcion() consume una parte importante de esos 100 ms, el tiempo real entre el
+final de una ejecución y el comienzo de la siguiente será menor que 100 ms.
 
+Si la función tarda más que el intervalo configurado, el motor espera a que termine
+y puede comenzar la siguiente ejecución inmediatamente.
 */
+
+function ejemploIntervaloRegular() {
+  let contador = 1;
+
+  const timerId = setInterval(() => {
+    funcionProgramada(contador++);
+  }, 100);
+
+  // Detener manualmente cuando ya no sea necesario.
+  return timerId;
+}
+
+/*
+Con setTimeout anidado, el nuevo temporizador se crea después de finalizar
+la ejecución actual.
+*/
+
+function ejemploIntervaloConTimeoutAnidado() {
+  let contador = 1;
+
+  setTimeout(function ejecutar() {
+    funcionProgramada(contador++);
+
+    setTimeout(ejecutar, 100);
+  }, 100);
+}
+
+/*
+El setTimeout anidado garantiza un retraso mínimo entre el final de una ejecución
+y el comienzo de la siguiente.
+
+En el ejemplo anterior:
+
+1. Se ejecuta funcionProgramada().
+2. La función termina.
+3. Se programa otro setTimeout de 100 ms.
+4. Solo después de ese retraso puede comenzar la siguiente ejecución.
+
+Con setInterval, en cambio, el tiempo de ejecución de la función puede consumir
+parte o incluso todo el intervalo.
+*/
+
+// Función auxiliar utilizada únicamente por los ejemplos anteriores.
+function funcionProgramada(numero) {
+  console.log(numero);
+}
+
+/*
+6. TEMPORIZADORES Y RECOLECCIÓN DE BASURA
+
+Cuando una función se pasa a setTimeout o setInterval, el planificador mantiene
+internamente una referencia a ella.
+
+Mientras esa referencia exista, la función no puede ser eliminada por el recolector
+de basura.
+
+Por ejemplo:
+
+setTimeout(function () {
+  // ...
+}, 100);
+
+La función permanece en memoria hasta que el planificador la ejecuta.
+
+Con setInterval, la función permanece referenciada mientras el intervalo continúe
+activo, es decir, hasta que se llame a clearInterval.
+*/
+
+/*
+Una función también puede mantener referencias a su entorno léxico externo.
+
+Por lo tanto, mientras la función programada siga existiendo, las variables externas
+que utiliza también pueden permanecer en memoria.
+
+Esas variables pueden consumir más memoria que la propia función.
+
+Cuando una tarea programada ya no sea necesaria, conviene cancelarla.
+*/
+
+function ejemploCancelarIntervalo() {
+  const datos = "Variable externa utilizada por la función";
+
+  const timerId = setInterval(() => {
+    console.log(datos);
+  }, 1000);
+
+  clearInterval(timerId);
+}
+
+/*
+7. setTimeout CON RETRASO CERO
+
+Estas dos formas son equivalentes:
+
+setTimeout(func, 0);
+setTimeout(func);
+
+No significan que func se ejecute inmediatamente.
+
+La función queda programada para ejecutarse tan pronto como sea posible,
+pero solamente después de que termine el script que se está ejecutando actualmente.
+*/
+
+function ejemploTimeoutCero() {
+  setTimeout(() => {
+    alert("Mundo");
+  });
+
+  alert("Hola");
+}
+
+/*
+Flujo:
+
+1. Se programa la función que muestra "Mundo".
+2. El script actual continúa.
+3. Se muestra "Hola".
+4. Finaliza el script actual.
+5. El planificador puede ejecutar la función pendiente.
+6. Se muestra "Mundo".
+
+Resultado:
+
+Hola
+Mundo
+*/
+
+/*
+8. EL RETRASO CERO NO SIEMPRE ES REALMENTE CERO EN EL NAVEGADOR
+
+Los navegadores limitan la frecuencia de los temporizadores anidados.
+
+Después de cinco temporizadores anidados, el intervalo mínimo pasa a ser
+aproximadamente 4 ms.
+
+El comportamiento puede observarse reprogramando continuamente un setTimeout
+sin indicar retraso.
+*/
+
+function ejemploTemporizadoresAnidadosSinRetraso() {
+  const inicio = Date.now();
+  const tiempos = [];
+
+  setTimeout(function ejecutar() {
+    tiempos.push(Date.now() - inicio);
+
+    if (inicio + 100 < Date.now()) {
+      alert(tiempos);
+    } else {
+      setTimeout(ejecutar);
+    }
+  });
+}
+
+/*
+Una salida posible puede mostrar valores similares a:
+
+1, 1, 1, 1, 9, 15, 20, 24, 30, ...
+
+Las primeras ejecuciones pueden realizarse muy rápidamente.
+
+Después entra en juego la limitación de aproximadamente 4 ms para temporizadores
+anidados.
+
+Una limitación semejante se aplica a setInterval cuando se utiliza sin retraso.
+
+Esta restricción es específica del navegador y existe por razones históricas.
+En JavaScript del lado del servidor no existe esta misma limitación.
+*/
+
+/*
+9. LOS TEMPORIZADORES NO GARANTIZAN UN RETRASO EXACTO
+
+setTimeout y setInterval establecen cuándo una función puede ejecutarse,
+pero no garantizan que se ejecute exactamente después del tiempo solicitado.
+
+El retraso real puede aumentar.
+
+Entre las causas mencionadas se encuentran:
+
+- La CPU está sobrecargada.
+- La pestaña del navegador está en segundo plano.
+- El portátil está utilizando el modo de ahorro de batería.
+
+Dependiendo del navegador, del sistema operativo y de su configuración de rendimiento,
+el retraso mínimo puede aumentar considerablemente.
+*/
+
+/*
+RESUMEN
+
+1. setTimeout(func, delay, ...args) ejecuta una función una vez después de un retraso.
+
+2. setInterval(func, delay, ...args) ejecuta una función repetidamente.
+
+3. setTimeout y setInterval devuelven un identificador de temporizador.
+
+4. clearTimeout(timerId) cancela un setTimeout.
+
+5. clearInterval(timerId) cancela un setInterval.
+
+6. Debe pasarse una referencia a la función:
+
+   setTimeout(funcion, 1000);
+
+   No debe ejecutarse al pasarla:
+
+   setTimeout(funcion(), 1000);
+
+7. setTimeout anidado es una alternativa más flexible a setInterval porque permite
+   calcular el retraso de la siguiente ejecución según el resultado de la actual.
+
+8. setInterval cuenta el tiempo de ejecución de la función como parte del intervalo.
+
+9. setTimeout anidado permite garantizar un retraso mínimo entre el final de una
+   ejecución y el comienzo de la siguiente.
+
+10. Una función programada permanece referenciada por el planificador y no puede ser
+    recolectada mientras siga siendo necesaria para el temporizador.
+
+11. setTimeout(func, 0) y setTimeout(func) programan la función para ejecutarse
+    después de que termine el script actual.
+
+12. En el navegador, después de varios temporizadores anidados aparece un retraso
+    mínimo de aproximadamente 4 ms.
+
+13. Ningún temporizador garantiza que la función se ejecute exactamente después
+    del retraso solicitado.
+*/
+
+/*
+ACTIVACIÓN MANUAL
+
+Descomenta solamente el ejemplo que quieras probar.
+
+Los ejemplos que utilizan alert dependen de un entorno de navegador.
+*/
+
+// ejemploSetTimeoutBasico();
+// ejemploSetTimeoutConArgumentos();
+// ejemploFuncionFlecha();
+// ejemploCancelarTimeout();
+// ejemploSetInterval();
+// ejemploTimeoutAnidado();
+// ejemploIntervaloRegular();
+// ejemploIntervaloConTimeoutAnidado();
+// ejemploCancelarIntervalo();
+// ejemploTimeoutCero();
+// ejemploTemporizadoresAnidadosSinRetraso();
