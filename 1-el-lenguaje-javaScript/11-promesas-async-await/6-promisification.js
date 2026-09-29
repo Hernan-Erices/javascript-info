@@ -1,345 +1,308 @@
 /*
-PROMISIFICACIÓN
+PROMISIFICATION
 
-La promisificación consiste en transformar una función basada en callbacks
-en una función que devuelve una Promise.
+La promisificación consiste en transformar una función que acepta una
+función de devolución de llamada (callback) en una función que devuelve
+una Promise.
 
-Muchas funciones utilizan callbacks con el formato:
+Esta transformación es útil cuando una función existente utiliza callbacks,
+pero queremos integrarla en código basado en promesas.
 
-callback(error, resultado)
+La idea general es:
 
-Cuando se promisifica una función de este tipo:
+callback -> Promise
 
-- Si ocurre un error, la Promise se rechaza con reject(error).
-- Si la operación termina correctamente, la Promise se resuelve con
-  resolve(resultado).
-
-La nueva función normalmente actúa como un envoltorio alrededor de la función
-original.
+La función original continúa funcionando igual. La nueva función actúa como
+un envoltorio que traduce el resultado del callback en resolve o reject.
 */
 
-
 /*
-1. FUNCIÓN ORIGINAL BASADA EN CALLBACK
+1. FUNCIÓN ORIGINAL BASADA EN CALLBACKS
 
-loadScript(src, callback) carga un script en el navegador.
+loadScript(src, callback) carga un script y después ejecuta el callback.
 
-Cuando la carga termina correctamente:
+El callback sigue el formato:
+
+callback(err, result)
+
+Si ocurre un error:
+
+callback(error)
+
+Si la operación termina correctamente:
 
 callback(null, script)
 
-Cuando ocurre un error:
-
-callback(error)
+Este ejemplo depende del navegador porque utiliza document.
 */
-
 function loadScript(src, callback) {
   const script = document.createElement("script");
   script.src = src;
 
   script.onload = () => callback(null, script);
-
-  script.onerror = () => {
+  script.onerror = () =>
     callback(new Error(`Script load error for ${src}`));
-  };
 
   document.head.append(script);
 }
 
 /*
-Este ejemplo depende del navegador porque utiliza document.
+2. CONVERSIÓN MANUAL A UNA PROMESA
 
-Uso basado en callback:
+loadScriptPromise(src) envuelve a loadScript().
 
-loadScript("path/script.js", (error, script) => {
-  ...
-});
-*/
+En lugar de recibir un callback, devuelve una Promise:
 
+- Si loadScript informa un error, se llama a reject(err).
+- Si la carga tiene éxito, se llama a resolve(script).
 
-/*
-2. PROMISIFICACIÓN MANUAL
-
-Queremos crear una versión de loadScript que reciba solamente src y devuelva
-una Promise.
-
-La Promise:
-
-- se resuelve con script si la carga termina correctamente;
-- se rechaza con el error si la carga falla.
-
-La función original no se modifica. La nueva función simplemente la envuelve.
-*/
-
-function loadScriptPromise(src) {
-  return new Promise((resolve, reject) => {
-    loadScript(src, (error, script) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(script);
-      }
-    });
-  });
-}
-
-/*
-Flujo cuando la carga funciona:
+Flujo exitoso:
 
 loadScriptPromise(src)
 -> loadScript(src, callback)
 -> callback(null, script)
 -> resolve(script)
--> .then(...)
 
-Flujo cuando ocurre un error:
+Flujo con error:
 
 loadScriptPromise(src)
 -> loadScript(src, callback)
--> callback(error)
--> reject(error)
--> manejador de rechazo
+-> callback(err)
+-> reject(err)
 */
+function ejemploPromisificacionManual() {
+  const loadScriptPromise = function (src) {
+    return new Promise((resolve, reject) => {
+      loadScript(src, (err, script) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(script);
+        }
+      });
+    });
+  };
 
+  return loadScriptPromise;
+}
 
 /*
-3. FUNCIÓN AUXILIAR promisify
+Uso conceptual:
 
-Si necesitamos convertir varias funciones basadas en callbacks, podemos
-crear una función auxiliar llamada promisify(f).
+const loadScriptPromise = ejemploPromisificacionManual();
 
-promisify(f) recibe una función original f y devuelve una nueva función
-contenedora que devuelve una Promise.
+loadScriptPromise("path/script.js")
+  .then(script => {
+    // El script se cargó correctamente.
+  })
+  .catch(err => {
+    // La carga produjo un error.
+  });
 
-Esta primera versión supone que la función original utiliza exactamente este
-formato de callback:
-
-callback(error, resultado)
+No se ejecuta automáticamente porque carga un recurso externo en el navegador.
 */
 
-function promisifySimple(funcionOriginal) {
-  return function (...argumentos) {
+/*
+3. FUNCIÓN AUXILIAR promisify(f)
+
+Si necesitamos promisificar varias funciones, podemos crear un ayudante
+general llamado promisify(f).
+
+promisify(f):
+
+1. Recibe una función f basada en callbacks.
+2. Devuelve una nueva función contenedora.
+3. La función contenedora recibe los argumentos originales mediante ...args.
+4. Devuelve una Promise.
+5. Crea un callback propio.
+6. Agrega ese callback al final de los argumentos.
+7. Ejecuta la función original con f.call(this, ...args).
+8. Convierte el callback en resolve o reject.
+
+Esta versión supone que la función original utiliza exactamente este formato:
+
+callback(err, result)
+
+Si err existe, la promesa se rechaza.
+Si no existe, la promesa se resuelve con result.
+*/
+function promisify(f) {
+  return function (...args) {
     return new Promise((resolve, reject) => {
-      function callback(error, resultado) {
-        if (error) {
-          reject(error);
+      function callback(err, result) {
+        if (err) {
+          reject(err);
         } else {
-          resolve(resultado);
+          resolve(result);
         }
       }
 
-      // El callback personalizado se agrega como último argumento.
-      argumentos.push(callback);
+      args.push(callback);
 
-      /*
-      Se llama a la función original conservando el valor actual de this
-      y pasando todos los argumentos recibidos.
-      */
-      funcionOriginal.call(this, ...argumentos);
+      f.call(this, ...args);
     });
   };
 }
 
 /*
-La idea es equivalente a la promisificación manual anterior:
+Ejemplo conceptual:
 
-const loadScriptPromise = promisifySimple(loadScript);
+const loadScriptPromise = promisify(loadScript);
 
-Ahora loadScriptPromise devuelve una Promise en lugar de necesitar que
-proporcionemos directamente un callback.
+loadScriptPromise("path/script.js")
+  .then(script => {
+    // La promesa se resolvió con script.
+  })
+  .catch(err => {
+    // La promesa se rechazó con err.
+  });
+
+La llamada anterior no se ejecuta automáticamente porque depende del navegador
+y carga un recurso externo.
 */
-
 
 /*
-4. QUÉ HACE INTERNAMENTE promisify
+4. POR QUÉ SE UTILIZA f.call(this, ...args)
 
-Una llamada:
+El envoltorio reenvía la llamada a la función original f.
 
-promisifySimple(funcionOriginal)
+Los argumentos recibidos se guardan en args y después se agrega al final
+el callback personalizado:
 
-no ejecuta inmediatamente funcionOriginal.
+args.push(callback);
 
-Primero devuelve una nueva función.
+Finalmente se ejecuta:
 
-Cuando posteriormente llamamos a esa función:
+f.call(this, ...args);
 
-funcionPromisificada(arg1, arg2)
-
-ocurre lo siguiente:
-
-1. Los argumentos se almacenan en argumentos.
-2. Se crea una nueva Promise.
-3. Se crea un callback personalizado.
-4. Ese callback se añade al final de los argumentos.
-5. Se ejecuta la función original.
-6. El callback transforma su resultado en resolve o reject.
-
-De esta forma se adapta una API basada en callbacks a una API basada en
-Promise sin modificar la función original.
+De esta forma, la función original recibe sus argumentos normales más
+el callback creado por promisify.
 */
-
 
 /*
 5. CALLBACKS CON VARIOS RESULTADOS
 
-La versión anterior supone que el callback tiene exactamente dos argumentos:
+La primera versión de promisify supone un callback de esta forma:
 
-callback(error, resultado)
+callback(err, result)
 
-Pero una función también puede utilizar:
+Sin embargo, algunas funciones pueden utilizar varios valores de resultado:
 
-callback(error, resultado1, resultado2, ...)
+callback(err, res1, res2, ...)
 
-En ese caso podemos crear una versión más flexible de promisify.
+Para esos casos puede utilizarse una versión ampliada de promisify.
 */
 
+/*
+6. promisify CON SOPORTE PARA VARIOS RESULTADOS
 
-function promisify(funcionOriginal, muchosArgumentos = false) {
-  return function (...argumentos) {
+La opción manyArgs controla cómo se resuelve la Promise.
+
+promisify(f)
+
+Equivale al comportamiento anterior: la Promise se resuelve solamente con
+el primer resultado del callback.
+
+promisify(f, true)
+
+La Promise se resuelve con un array que contiene todos los resultados.
+
+El callback interno utiliza:
+
+callback(err, ...results)
+
+Por lo tanto, todos los resultados quedan almacenados en results.
+*/
+function promisifyMultipleResults(f, manyArgs = false) {
+  return function (...args) {
     return new Promise((resolve, reject) => {
-      function callback(error, ...resultados) {
-        if (error) {
-          reject(error);
+      function callback(err, ...results) {
+        if (err) {
+          reject(err);
         } else {
-          resolve(muchosArgumentos ? resultados : resultados[0]);
+          resolve(manyArgs ? results : results[0]);
         }
       }
 
-      argumentos.push(callback);
+      args.push(callback);
 
-      funcionOriginal.call(this, ...argumentos);
+      f.call(this, ...args);
     });
   };
 }
 
-
 /*
-6. COMPORTAMIENTO DE muchosArgumentos
+Comportamiento:
 
-Si utilizamos:
-
-promisify(funcionOriginal)
-
-muchosArgumentos vale false.
-
-Por lo tanto, cuando el callback recibe:
+promisifyMultipleResults(f)
 
 callback(null, resultado1, resultado2)
+-> resolve(resultado1)
 
-la Promise se resuelve únicamente con:
+promisifyMultipleResults(f, true)
 
-resultado1
+callback(null, resultado1, resultado2)
+-> resolve([resultado1, resultado2])
 
-porque se ejecuta:
+Si existe un error:
 
-resolve(resultados[0])
-
-
-En cambio, si utilizamos:
-
-promisify(funcionOriginal, true)
-
-la Promise se resuelve con el array completo de resultados:
-
-[resultado1, resultado2, ...]
+callback(error, ...)
+-> reject(error)
 */
-
-
-function ejemploCallbackConVariosResultados(valor, callback) {
-  callback(null, valor, valor);
-}
-
-function crearPromesaConPrimerResultado() {
-  const funcionPromisificada = promisify(
-    ejemploCallbackConVariosResultados
-  );
-
-  return funcionPromisificada("resultado");
-}
-
-function crearPromesaConTodosLosResultados() {
-  const funcionPromisificada = promisify(
-    ejemploCallbackConVariosResultados,
-    true
-  );
-
-  return funcionPromisificada("resultado");
-}
-
-/*
-En el primer caso, la Promise se resuelve con el primer resultado.
-
-En el segundo caso, la Promise se resuelve con un array que contiene todos
-los resultados proporcionados por el callback.
-*/
-
 
 /*
 7. FORMATOS DE CALLBACK NO COMPATIBLES DIRECTAMENTE
 
-promisify supone que el primer argumento del callback representa un error:
+Estas funciones auxiliares parten de una convención concreta:
 
-callback(error, resultado)
+callback(err, result)
+
+o:
+
+callback(err, res1, res2, ...)
 
 No todas las funciones utilizan ese formato.
 
 Por ejemplo, una función podría usar:
 
-callback(resultado)
+callback(result)
 
-sin ningún argumento error.
+sin recibir un argumento err.
 
-Para formatos de callback diferentes o más especiales, la función puede
-promisificarse manualmente en lugar de utilizar este asistente.
+En esos casos, la función puede promisificarse manualmente en lugar de usar
+este ayudante.
 */
 
-
 /*
-8. PROMISE NO REEMPLAZA COMPLETAMENTE A LOS CALLBACKS
+8. PROMISIFICACIÓN NO REEMPLAZA TODOS LOS CALLBACKS
 
-Las Promise son especialmente convenientes para código basado en promesas
-y para async/await.
+Las promesas son especialmente útiles para trabajar con operaciones que
+producen un único resultado.
 
-Sin embargo, no sustituyen completamente a los callbacks.
+Sin embargo, una función de devolución de llamada puede ejecutarse
+técnicamente muchas veces.
 
-Una Promise solamente puede tener un resultado final.
+Una Promise solo puede establecer su resultado una vez.
 
-Un callback, en cambio, técnicamente puede ser llamado varias veces.
-
-Por este motivo, la promisificación está pensada para funciones que llaman
+Por esta razón, la promisificación está pensada para funciones que llaman
 a su callback una sola vez.
+
+Si la función intenta llamar nuevamente al callback después de que la Promise
+ya fue resuelta o rechazada, esas llamadas posteriores serán ignoradas.
 */
 
-
 /*
-9. LLAMADAS POSTERIORES AL CALLBACK
+9. HERRAMIENTAS MENCIONADAS
 
-Si una función promisificada llama a su callback varias veces, solamente
-la primera llamada que resuelva o rechace la Promise tendrá efecto.
-
-Las llamadas posteriores serán ignoradas.
-
-Por lo tanto, una función que necesita producir resultados mediante múltiples
-llamadas sucesivas a un callback no encaja directamente con este modelo de
-promisificación.
-*/
-
-
-/*
-10. HERRAMIENTAS EXISTENTES
-
-Además de crear una función promisify manualmente, existen herramientas
-destinadas a este tipo de transformación.
+Existen herramientas más flexibles para realizar promisificación.
 
 El contenido menciona:
 
 - es6-promisify.
 - util.promisify en Node.js.
 
-Estas herramientas permiten convertir funciones basadas en callbacks en
-funciones que trabajan con Promise.
+El funcionamiento específico de estas herramientas no se desarrolla aquí.
 */
-
 
 /*
 RESUMEN
@@ -347,74 +310,53 @@ RESUMEN
 1. Promisificar significa convertir una función basada en callbacks en una
    función que devuelve una Promise.
 
-2. Un callback del tipo:
+2. La función original no necesita modificarse. Puede envolverse en una nueva
+   función que traduzca su callback a resolve y reject.
 
-   callback(error, resultado)
+3. Un callback con el formato callback(err, result) puede traducirse así:
 
-   puede transformarse en:
+   err    -> reject(err)
+   result -> resolve(result)
 
-   error     -> reject(error)
-   resultado -> resolve(resultado)
+4. promisify(f) permite realizar esta transformación de manera reutilizable.
 
-3. La función promisificada normalmente es un envoltorio y no modifica la
-   función original.
+5. El callback personalizado se agrega al final de los argumentos antes de
+   ejecutar la función original.
 
-4. promisify(f) puede automatizar esta transformación para funciones que
-   siguen el formato callback(error, resultado).
+6. f.call(this, ...args) ejecuta la función original reenviando el contexto
+   y los argumentos recibidos.
 
-5. El callback personalizado se añade como último argumento de la función
-   original.
+7. Para callbacks con varios resultados puede usarse:
 
-6. funcionOriginal.call(this, ...argumentos) permite reenviar la llamada a
-   la función original conservando el valor actual de this.
+   callback(err, ...results)
 
-7. Si el callback proporciona varios resultados, una versión más avanzada
-   puede recogerlos mediante:
+8. Con manyArgs = false, la Promise se resuelve con results[0].
 
-   callback(error, ...resultados)
+9. Con manyArgs = true, la Promise se resuelve con el array completo results.
 
-8. promisify(f, false) resuelve la Promise con resultados[0].
+10. Los formatos de callback diferentes, como callback(result), pueden
+    promisificarse manualmente.
 
-9. promisify(f, true) resuelve la Promise con el array completo resultados.
+11. Una Promise tiene un único resultado, mientras que un callback puede
+    invocarse varias veces.
 
-10. Los callbacks con otros formatos, por ejemplo callback(resultado), pueden
-    necesitar una promisificación manual.
-
-11. Una Promise solamente tiene un resultado final.
-
-12. Los callbacks pueden ser llamados múltiples veces.
-
-13. Por ello, la promisificación está destinada a funciones que llaman a su
-    callback una sola vez.
-
-14. Después de que una Promise se resuelve o se rechaza, las llamadas
-    posteriores al callback no cambian su resultado.
+12. Por ello, la promisificación está destinada a funciones que ejecutan
+    su callback una sola vez.
 */
-
 
 /*
 ACTIVACIÓN MANUAL
 
-Descomenta solamente el ejemplo que quieras probar.
-
-loadScript y loadScriptPromise dependen del navegador.
+Los ejemplos relacionados con loadScript dependen del navegador y pueden
+realizar solicitudes para cargar scripts. Descomenta únicamente el código
+que quieras probar.
 */
 
-// loadScript("path/script.js", (error, script) => {
-//   console.log(error, script);
-// });
+// const loadScriptPromiseManual = ejemploPromisificacionManual();
+// loadScriptPromiseManual("path/script.js").then(script => console.log(script));
 
-// loadScriptPromise("path/script.js")
-//   .then(script => console.log(script))
-//   .catch(error => console.log(error));
+// const loadScriptPromise = promisify(loadScript);
+// loadScriptPromise("path/script.js").then(script => console.log(script));
 
-// const loadScriptPromisificado = promisify(loadScript);
-// loadScriptPromisificado("path/script.js")
-//   .then(script => console.log(script))
-//   .catch(error => console.log(error));
-
-// crearPromesaConPrimerResultado()
-//   .then(resultado => console.log(resultado));
-
-// crearPromesaConTodosLosResultados()
-//   .then(resultados => console.log(resultados));
+// const loadScriptPromiseConResultados = promisifyMultipleResults(loadScript, true);
+// loadScriptPromiseConResultados("path/script.js").then(resultados => console.log(resultados));

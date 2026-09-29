@@ -1,1971 +1,780 @@
 /*
-===============================================================================
-PROMESAS (PROMISES)
-===============================================================================
+PROMESAS
 
-OBJETIVO:
-- Entender quÈ problema solucionan las Promesas.
-- Entender quÈ es una Promise.
-- Entender resolve() y reject().
-- Entender los estados de una Promise.
-- Entender el resultado de una Promise.
-- Aprender .then().
-- Aprender .catch().
-- Aprender .finally().
-- Entender cÛmo se manejan los errores.
-- Reescribir callbacks utilizando Promises.
-- Entender las ventajas de las Promises frente a callbacks.
+Una Promise es un objeto especial de JavaScript que conecta el c√≥digo que
+produce un resultado con el c√≥digo que necesita consumir ese resultado.
 
-CONCEPTO PREVIO IMPORTANTE:
+La idea general es:
 
-En el capÌtulo anterior vimos que las operaciones asÌncronas pueden
-manejarse mediante callbacks.
+1. Un c√≥digo productor realiza una tarea que puede requerir tiempo.
+2. Una Promise representa el resultado futuro de esa tarea.
+3. El c√≥digo consumidor se suscribe al resultado mediante .then(), .catch()
+   y .finally().
 
-El problema aparece cuando tenemos muchas operaciones encadenadas:
-
-    operaciÛn1(() => {
-        operaciÛn2(() => {
-            operaciÛn3(() => {
-                ...
-            });
-        });
-    });
-
-Esto puede producir:
-
-    Callback Hell
-    Pyramid of Doom
-
-Las Promises proporcionan una forma m·s organizada de manejar
-operaciones asÌncronas.
+Fuente de la lecci√≥n:
+:chatgpt-content-reference{index="0"}
 */
-
-
-// =============================================================================
-// 1. øQU… PROBLEMA RESUELVE UNA PROMISE?
-// =============================================================================
-
-/*
-Imaginemos una operaciÛn que tarda cierto tiempo en producir un resultado.
-
-Por ejemplo:
-
-    - Descargar informaciÛn.
-    - Cargar un archivo.
-    - Realizar una peticiÛn de red.
-    - Esperar un temporizador.
-    - Procesar alg˙n dato.
-
-Tenemos dos partes:
-
-    PRODUCTOR
-        |
-        | realiza una operaciÛn que tarda
-        v
-    RESULTADO
-        |
-        v
-    CONSUMIDORES
-
-
-El PRODUCTOR es el cÛdigo que realiza la operaciÛn.
-
-Los CONSUMIDORES son las partes del programa que necesitan el resultado.
-
-Una Promise act˙a como intermediario entre ambos.
-
-
-Conceptualmente:
-
-                PRODUCTOR
-                    |
-                    | genera resultado
-                    v
-                PROMISE
-                 /    \
-                /      \
-               v        v
-          consumidor  consumidor
-
-
-La Promise representa un resultado que todavÌa no tenemos,
-pero que tendremos en el futuro.
-
-
-Una buena forma de pensar en ella:
-
-    Promise = "Te prometo que posteriormente te entregarÈ
-               un resultado o un error."
-
-
-*/
-
-
-// =============================================================================
-// 2. CREAR UNA PROMISE
-// =============================================================================
-
-/*
-La sintaxis b·sica es:
-
-    new Promise(function(resolve, reject) {
-        // cÛdigo productor
-    });
-
-
-Ejemplo:
-
-*/
-
-let promise = new Promise(function(resolve, reject) {
-
-    // AquÌ colocamos el cÛdigo que realizar· el trabajo.
-
-});
 
 
 /*
-La funciÛn que recibe new Promise() se llama:
+1. CREACI√ìN DE UNA PROMISE
 
-    EXECUTOR
+Una Promise se crea con el constructor new Promise().
 
-Es decir:
+El constructor recibe una funci√≥n llamada executor.
 
-    new Promise(EXECUTOR)
-
-
-El executor se ejecuta AUTOM¡TICAMENTE cuando se crea la Promise.
-
-No tenemos que llamarlo manualmente.
-
-
-Por ejemplo:
+El executor:
+- Se ejecuta autom√°ticamente cuando se crea la Promise.
+- Recibe las funciones resolve y reject.
+- Debe llamar a resolve(value) cuando la operaci√≥n termina correctamente.
+- Debe llamar a reject(error) cuando ocurre un error.
 */
 
-let promiseEjecutor = new Promise(function(resolve, reject) {
+function ejemploPromesaResuelta() {
+  const promesa = new Promise(function (resolve, reject) {
+    setTimeout(() => resolve("done"), 1000);
+  });
 
-    console.log("El executor se ejecuta autom·ticamente.");
-
-});
+  return promesa;
+}
 
 
 /*
-Al crear la Promise:
+2. ESTADOS DE UNA PROMISE
 
-    new Promise(...)
+Una Promise posee dos propiedades internas principales:
 
-JavaScript ejecuta inmediatamente:
+state:
+- "pending" al principio.
+- "fulfilled" cuando se llama a resolve().
+- "rejected" cuando se llama a reject().
 
-    function(resolve, reject) {
-        ...
-    }
+result:
+- undefined inicialmente.
+- El valor proporcionado a resolve(value) cuando se cumple.
+- El error proporcionado a reject(error) cuando se rechaza.
 
+Estas propiedades son internas y no se accede directamente a ellas.
 
-IMPORTANTE:
+Para trabajar con el resultado se utilizan:
 
-El executor es el cÛdigo PRODUCTOR.
-
-Su trabajo es realizar la operaciÛn y finalmente indicar:
-
-    resolve(resultado)
-
-o:
-
-    reject(error)
+.then()
+.catch()
+.finally()
 */
 
-
-// =============================================================================
-// 3. resolve() Y reject()
-// =============================================================================
 
 /*
-El executor recibe DOS funciones especiales:
+3. RESOLVER UNA PROMISE
 
-    resolve
-    reject
+resolve(value) indica que la operaci√≥n termin√≥ correctamente.
 
-
-Estas funciones son proporcionadas por JavaScript.
-
-Nosotros NO tenemos que crearlas.
-
-
-Su propÛsito es informar a la Promise del resultado de la operaciÛn.
-
-
-RESOLVE
--------
-
-Se utiliza cuando la operaciÛn terminÛ correctamente.
-
-    resolve(value)
-
-
-Ejemplo:
-
+En este ejemplo, despu√©s de un segundo la Promise se cumple con el valor
+"done".
 */
 
-let promiseExitosa = new Promise(function(resolve, reject) {
+function ejemploResolve() {
+  return new Promise(function (resolve, reject) {
+    setTimeout(() => resolve("done"), 1000);
+  });
+}
 
-    // Simulamos una operaciÛn que tarda 1 segundo.
+
+/*
+4. RECHAZAR UNA PROMISE
+
+reject(error) indica que la operaci√≥n termin√≥ con un error.
+
+Se recomienda rechazar una Promise utilizando objetos Error u objetos que
+hereden de Error.
+*/
+
+function ejemploReject() {
+  return new Promise(function (resolve, reject) {
+    setTimeout(() => reject(new Error("Whoops!")), 1000);
+  });
+}
+
+
+/*
+5. UNA PROMISE SOLO PUEDE TENER UN RESULTADO
+
+El executor debe finalizar llamando a resolve() o reject().
+
+Una vez que la Promise cambia de estado, el cambio es definitivo.
+
+Las llamadas posteriores a resolve() o reject() son ignoradas.
+*/
+
+function ejemploUnSoloResultado() {
+  return new Promise(function (resolve, reject) {
+    resolve("done");
+
+    reject(new Error("Este error ser√° ignorado"));
 
     setTimeout(() => {
-
-        // La operaciÛn terminÛ correctamente.
-        resolve("done");
-
+      resolve("Este segundo resultado tambi√©n ser√° ignorado");
     }, 1000);
-
-});
+  });
+}
 
 
 /*
-DespuÈs de 1 segundo:
+resolve() y reject() utilizan solamente un argumento.
 
-    resolve("done")
-
-
-indica:
-
-    "La operaciÛn terminÛ correctamente
-     y el resultado es 'done'."
-
-
-------------------------------------------------------------
-
-REJECT
-------
-
-Se utiliza cuando la operaciÛn terminÛ con un error.
-
-    reject(error)
-
-
-Ejemplo:
+Los argumentos adicionales son ignorados.
 */
 
-let promiseFallida = new Promise(function(resolve, reject) {
 
-    setTimeout(() => {
+/*
+6. RESOLUCI√ìN INMEDIATA
 
-        // La operaciÛn terminÛ con un error.
-        reject(new Error("Whoops!"));
+Aunque normalmente una Promise representa una operaci√≥n que necesita tiempo,
+resolve() o reject() tambi√©n pueden llamarse inmediatamente.
 
-    }, 1000);
+Esto puede ocurrir, por ejemplo, cuando el resultado ya est√° disponible.
+*/
 
-});
+function ejemploResolucionInmediata() {
+  return new Promise(function (resolve, reject) {
+    resolve(123);
+  });
+}
+
+
+/*
+7. CONSUMIDORES DE UNA PROMISE
+
+El objeto Promise conecta:
+
+- El executor, que produce el resultado.
+- Los consumidores, que esperan ese resultado.
+
+Los consumidores pueden registrarse utilizando .then() y .catch().
+*/
+
+
+/*
+8. M√âTODO .then()
+
+.then() puede recibir dos funciones:
+
+promise.then(
+  function (result) {
+    // Se ejecuta cuando la Promise se cumple.
+  },
+  function (error) {
+    // Se ejecuta cuando la Promise se rechaza.
+  }
+);
+
+La primera funci√≥n recibe el resultado exitoso.
+
+La segunda funci√≥n recibe el error.
+*/
+
+function ejemploThenExitoso() {
+  const promesa = new Promise(function (resolve, reject) {
+    setTimeout(() => resolve("done!"), 1000);
+  });
+
+  promesa.then(
+    resultado => alert(resultado),
+    error => alert(error)
+  );
+}
 
 
 /*
 En este caso:
 
-    reject(new Error("Whoops!"))
+resolve("done!")
+    ‚Üì
+primer manejador de .then()
+    ‚Üì
+alert("done!")
 
-indica:
-
-    "La operaciÛn fallÛ y este es el error."
-
-
-Por convenciÛn, se recomienda utilizar objetos Error:
-
-    reject(new Error("DescripciÛn del error"));
-
-en lugar de simplemente:
-
-    reject("algo saliÛ mal");
-
-
-Esto permite trabajar con informaciÛn de error de una forma m·s
-consistente.
+El manejador de error no se ejecuta.
 */
 
 
-// =============================================================================
-// 4. ESTADOS DE UNA PROMISE
-// =============================================================================
-
-/*
-Una Promise tiene internamente un ESTADO.
-
-Inicialmente:
-
-    "pending"
-
-
-Es decir:
-
-    PENDIENTE
-
-TodavÌa no sabemos si la operaciÛn terminar· correctamente o con error.
-
-
-Posteriormente puede cambiar a:
-
-    "fulfilled"
-
-o:
-
-    "rejected"
-
-
-Por lo tanto:
-
-                    PENDING
-                       |
-              +--------+--------+
-              |                 |
-              v                 v
-          FULFILLED          REJECTED
-              |                 |
-              v                 v
-           Èxito              error
-
-
-Los tres estados conceptuales son:
-
-    pending
-        = todavÌa pendiente
-
-    fulfilled
-        = terminÛ correctamente
-
-    rejected
-        = terminÛ con error
-
-
-Una Promise solamente puede avanzar una vez.
-*/
-
-
-// =============================================================================
-// 5. EL RESULTADO DE UNA PROMISE
-// =============================================================================
-
-/*
-Adem·s del estado, una Promise tiene internamente un RESULTADO.
-
-Conceptualmente:
-
-    state
-    result
-
-
-Inicialmente:
-
-    state  = "pending"
-    result = undefined
-
-
-Si hacemos:
-
-    resolve("done")
-
-
-pasa a:
-
-    state  = "fulfilled"
-    result = "done"
-
-
-Si hacemos:
-
-    reject(error)
-
-
-pasa a:
-
-    state  = "rejected"
-    result = error
-
-
-Podemos visualizarlo asÌ:
-
-ANTES:
-
-    state:  "pending"
-    result: undefined
-
-
-DESPU…S DE resolve("done"):
-
-    state:  "fulfilled"
-    result: "done"
-
-
-DESPU…S DE reject(error):
-
-    state:  "rejected"
-    result: error
-
-
-IMPORTANTE:
-
-Estas propiedades son INTERNAS.
-
-No podemos hacer:
-
-    promise.state
-
-o:
-
-    promise.result
-
-
-para obtenerlas directamente.
-
-Para interactuar con una Promise utilizamos:
-
-    .then()
-    .catch()
-    .finally()
-*/
-
-
-// =============================================================================
-// 6. UNA PROMISE SOLO PUEDE TERMINAR UNA VEZ
-// =============================================================================
-
-/*
-Una vez que una Promise pasa de:
-
-    pending
-
-a:
-
-    fulfilled
-
-o:
-
-    rejected
-
-
-su estado es DEFINITIVO.
-
-
-Por ejemplo:
-*/
-
-let promiseUnaSolaVez = new Promise(function(resolve, reject) {
-
-    resolve("done");
-
-    // Todo lo siguiente ser· ignorado.
-
-    reject(new Error("error"));
-
-    setTimeout(() => {
-
-        resolve("otro resultado");
-
-    }, 1000);
-
-});
+function ejemploThenConError() {
+  const promesa = new Promise(function (resolve, reject) {
+    setTimeout(() => reject(new Error("Whoops!")), 1000);
+  });
+
+  promesa.then(
+    resultado => alert(resultado),
+    error => alert(error)
+  );
+}
 
 
 /*
-El resultado final seguir· siendo:
+En este caso:
 
-    fulfilled
-    "done"
+reject(new Error("Whoops!"))
+    ‚Üì
+segundo manejador de .then()
+    ‚Üì
+alert(error)
 
-
-øPor quÈ?
-
-Porque la Promise solamente puede tener:
-
-    UN resultado
-
-o:
-
-    UN error
-
-
-Nunca ambos.
-
-
-Podemos pensar en resolve() / reject() como una decisiÛn definitiva:
-
-    PENDING
-       |
-       +---- resolve() ---> FULFILLED
-       |
-       +---- reject() ----> REJECTED
-
-Una vez tomada la decisiÛn:
-
-    NO SE PUEDE CAMBIAR.
+El manejador de √©xito no se ejecuta.
 */
-
-
-// =============================================================================
-// 7. resolve() Y reject() SOLO NECESITAN UN ARGUMENTO
-// =============================================================================
-
-/*
-Normalmente:
-
-    resolve(value)
-
-y:
-
-    reject(error)
-
-
-Los argumentos adicionales no se utilizan como resultados adicionales.
-
-La Promise representa un ˙nico resultado o un ˙nico error.
-
-Si necesitamos varios valores, podemos agruparlos, por ejemplo, en:
-
-    - un objeto
-    - un array
-
-Ejemplo conceptual:
-
-    resolve({
-        nombre: "Juan",
-        edad: 25
-    });
-
-
-*/
-
-
-// =============================================================================
-// 8. RESOLVER UNA PROMISE INMEDIATAMENTE
-// =============================================================================
-
-/*
-Una Promise NO necesariamente tiene que tardar.
-
-Podemos resolverla inmediatamente.
-
-*/
-
-let promiseInmediata = new Promise(function(resolve, reject) {
-
-    resolve(123);
-
-});
 
 
 /*
-AquÌ el executor se ejecuta inmediatamente y llama:
+9. .then() SOLO PARA √âXITO
 
-    resolve(123)
-
-
-Por lo tanto la Promise pasa inmediatamente a:
-
-    fulfilled
-
-con resultado:
-
-    123
-
-
-Esto puede ser ˙til, por ejemplo, cuando:
-
-    - el resultado ya est· disponible.
-    - los datos est·n almacenados en cachÈ.
-    - no necesitamos realizar una operaciÛn asÌncrona.
-
-
-No debemos pensar que:
-
-    Promise = siempre tarda
-
-
-Una Promise representa un resultado que puede estar:
-
-    - pendiente
-    - disponible
-    - rechazado
+Si solamente interesa el resultado exitoso, .then() puede recibir una √∫nica
+funci√≥n.
 */
 
+function ejemploThenSoloExito() {
+  const promesa = new Promise(resolve => {
+    setTimeout(() => resolve("done!"), 1000);
+  });
 
-// =============================================================================
-// 9. LOS "CONSUMIDORES" DE UNA PROMISE
-// =============================================================================
-
-/*
-Hasta ahora hemos visto el PRODUCTOR:
-
-    new Promise((resolve, reject) => {
-        ...
-    });
-
-
-Pero necesitamos consumidores.
-
-Los consumidores son las partes del programa que dicen:
-
-    "Cuando la Promise termine, quiero hacer algo con el resultado."
-
-
-Para eso tenemos:
-
-    .then()
-    .catch()
-    .finally()
-
-
-El mÈtodo principal es:
-
-    .then()
-*/
-
-
-// =============================================================================
-// 10. .then()
-// =============================================================================
-
-/*
-Sintaxis:
-
-    promise.then(
-        function(result) {
-            // Èxito
-        },
-        function(error) {
-            // error
-        }
-    );
-
-
-.then() puede recibir DOS funciones:
-
-    1. Primera funciÛn:
-       se ejecuta si la Promise se cumple.
-
-    2. Segunda funciÛn:
-       se ejecuta si la Promise es rechazada.
-
-
-*/
-
-
-// Ejemplo de Èxito:
-
-let promiseThen = new Promise(function(resolve, reject) {
-
-    setTimeout(() => {
-
-        resolve("done!");
-
-    }, 1000);
-
-});
-
-
-promiseThen.then(
-
-    // Se ejecuta cuando resolve() es llamado.
-    result => {
-        console.log("Resultado:", result);
-    },
-
-    // Se ejecutarÌa si reject() fuera llamado.
-    error => {
-        console.error("Error:", error);
-    }
-
-);
+  promesa.then(alert);
+}
 
 
 /*
-DespuÈs de 1 segundo:
+10. M√âTODO .catch()
 
-    Resultado: done!
+Si solamente interesa manejar errores, puede utilizarse:
 
+promise.then(null, manejadorDeError);
 
-La segunda funciÛn NO se ejecuta porque la Promise fue cumplida.
+o su forma abreviada:
 
+promise.catch(manejadorDeError);
 
-Podemos representarlo:
-
-            PROMISE
-               |
-               v
-        øcÛmo terminÛ?
-          /          \
-         /            \
-     resolve         reject
-        |               |
-        v               v
-    .then() Èxito    .then() error
+Ambas formas son equivalentes.
 */
 
+function ejemploCatch() {
+  const promesa = new Promise((resolve, reject) => {
+    setTimeout(() => reject(new Error("Whoops!")), 1000);
+  });
 
-// =============================================================================
-// 11. .then() SOLO PARA …XITO
-// =============================================================================
-
-/*
-Si solamente nos interesa el resultado exitoso,
-podemos proporcionar un solo argumento.
-
-*/
-
-let promiseSoloExito = new Promise(resolve => {
-
-    setTimeout(() => {
-
-        resolve("done!");
-
-    }, 1000);
-
-});
-
-
-promiseSoloExito.then(result => {
-
-    console.log(result);
-
-});
+  promesa.catch(alert);
+}
 
 
 /*
-Es equivalente a decir:
+Equivalencia:
 
-    "No me interesa manejar el error aquÌ."
+promesa.catch(manejador);
 
+es lo mismo que:
 
-Podemos utilizar:
-
-    promise.then(result => {
-        ...
-    });
-
-
+promesa.then(null, manejador);
 */
 
+function ejemploCatchEquivalente() {
+  const promesa = new Promise((resolve, reject) => {
+    reject(new Error("Error de ejemplo"));
+  });
 
-// =============================================================================
-// 12. .catch()
-// =============================================================================
+  const manejarError = error => alert(error);
 
-/*
-Si solamente nos interesa manejar errores podemos utilizar:
+  // Forma 1:
+  // promesa.catch(manejarError);
 
-    .catch()
-
-
-Por ejemplo:
-*/
-
-let promiseCatch = new Promise((resolve, reject) => {
-
-    setTimeout(() => {
-
-        reject(new Error("Whoops!"));
-
-    }, 1000);
-
-});
-
-
-promiseCatch.catch(error => {
-
-    console.error(error);
-
-});
+  // Forma equivalente:
+  promesa.then(null, manejarError);
+}
 
 
 /*
-.catch() es una forma abreviada de:
+11. M√âTODO .finally()
 
-    .then(null, errorHandler)
+.finally() permite ejecutar una operaci√≥n cuando la Promise termina,
+independientemente de si se cumpli√≥ o fue rechazada.
 
+Su uso principal es realizar procedimientos generales de finalizaci√≥n o
+limpieza.
 
-Es decir:
+Ejemplos mencionados en la lecci√≥n:
+- Detener un indicador de carga.
+- Cerrar conexiones que ya no son necesarias.
 
-    promise.catch(errorHandler)
+Aunque puede parecer similar a:
 
+.then(f, f)
 
-equivale a:
-
-    promise.then(null, errorHandler)
-
-
-Por lo tanto:
-
-    .then()
-        = manejar Èxito y/o error
-
-    .catch()
-        = manejar errores
+no son exactamente equivalentes.
 */
-
-
-// =============================================================================
-// 13. .finally()
-// =============================================================================
-
-/*
-Existe un tercer mÈtodo:
-
-    .finally()
-
-
-Se utiliza para ejecutar cÛdigo independientemente de si la Promise:
-
-    - fue cumplida
-    - fue rechazada
-
-
-Es especialmente ˙til para tareas de LIMPIEZA o FINALIZACI”N.
-
-
-Ejemplos:
-
-    - detener un indicador de carga.
-    - cerrar una conexiÛn.
-    - liberar un recurso.
-    - ejecutar una acciÛn que siempre debe ocurrir.
-
-
-Conceptualmente:
-
-              PROMISE
-                 |
-          +------+------+
-          |             |
-       resolve        reject
-          |             |
-          +------+------+
-                 |
-                 v
-             finally()
-
-
-*/
-
-
-// Ejemplo:
-
-new Promise((resolve, reject) => {
-
-    setTimeout(() => {
-
-        resolve("done");
-
-    }, 1000);
-
-})
-.finally(() => {
-
-    console.log("La operaciÛn terminÛ.");
-
-})
-.then(result => {
-
-    console.log("Resultado:", result);
-
-});
 
 
 /*
-El flujo es:
+12. finally() NO RECIBE EL RESULTADO
 
-    Promise
-       |
-       v
-    resolve()
-       |
-       v
-    finally()
-       |
-       v
-    then()
+El manejador proporcionado a finally() no recibe argumentos.
 
+No est√° dise√±ado para procesar el resultado o el error de la Promise.
 
-El finally() se ejecuta antes de continuar con el siguiente handler.
+Su objetivo es realizar una operaci√≥n general que debe ocurrir tanto en caso
+de √©xito como de error.
 */
 
-
-// =============================================================================
-// 14. finally() SE EJECUTA TAMBI…N CON ERRORES
-// =============================================================================
-
-new Promise((resolve, reject) => {
-
-    setTimeout(() => {
-
-        reject(new Error("Algo saliÛ mal"));
-
-    }, 1000);
-
-})
-.finally(() => {
-
-    console.log("La operaciÛn terminÛ.");
-
-})
-.catch(error => {
-
-    console.error("Error:", error);
-
-});
-
-
-/*
-AquÌ:
-
-    Promise
-       |
-       v
-    reject()
-       |
-       v
-    finally()
-       |
-       v
-    catch()
-
-
-El finally() se ejecuta igualmente.
-
-
-Por eso resulta ˙til para tareas generales de limpieza.
-*/
-
-
-// =============================================================================
-// 15. finally() NO RECIBE EL RESULTADO
-// =============================================================================
-
-/*
-Un finally() no recibe como argumento:
-
-    - el resultado
-    - el error
-
-
-Por ejemplo:
-
-*/
-
-Promise.resolve("valor")
-
-    .finally(() => {
-
-        // No recibimos "valor" aquÌ.
-        console.log("Finalizando...");
-
-    });
-
-
-/*
-Esto es intencional.
-
-finally() no est· diseÒado para procesar el resultado.
-
-Est· diseÒado para realizar una acciÛn general que debe ocurrir
-independientemente del resultado.
-*/
-
-
-// =============================================================================
-// 16. finally() TRANSMITE EL RESULTADO
-// =============================================================================
-
-/*
-Una caracterÌstica muy importante:
-
-    finally() NO consume el resultado.
-
-Si la Promise tenÌa:
-
-    "value"
-
-
-ese valor contin˙a hacia el siguiente .then().
-
-
-Ejemplo:
-*/
-
-new Promise((resolve, reject) => {
-
-    setTimeout(() => {
-
-        resolve("value");
-
-    }, 1000);
-
-})
-.finally(() => {
-
-    console.log("Promise lista.");
-
-})
-.then(result => {
-
-    console.log(result);
-
-});
-
-
-/*
-El resultado ser·:
-
-    Promise lista.
-    value
-
-
-Es decir:
-
-    resolve("value")
-          |
-          v
-       finally()
-          |
-          |  transmite "value"
-          v
-        then()
-
-
-El finally() act˙a como una etapa intermedia sin consumir el resultado.
-*/
-
-
-// =============================================================================
-// 17. finally() TAMBI…N TRANSMITE LOS ERRORES
-// =============================================================================
-
-/*
-Lo mismo ocurre con un error.
-
-*/
-
-new Promise((resolve, reject) => {
-
-    reject(new Error("error"));
-
-})
-.finally(() => {
-
-    console.log("Promise lista.");
-
-})
-.catch(error => {
-
-    console.error(error);
-
-});
+function ejemploFinallyConResultado() {
+  new Promise((resolve, reject) => {
+    setTimeout(() => resolve("value"), 2000);
+  })
+    .finally(() => alert("Promise ready"))
+    .then(resultado => alert(resultado));
+}
 
 
 /*
 Flujo:
 
-    reject(error)
-         |
-         v
-      finally()
-         |
-         | transmite el error
-         v
-       catch()
+resolve("value")
+    ‚Üì
+finally()
+    ‚Üì
+then("value")
 
+finally() no consume el valor.
 
-Por lo tanto finally() permite realizar limpieza sin destruir
-el resultado ni el error.
+El resultado "value" contin√∫a hacia el siguiente manejador adecuado.
 */
 
-
-// =============================================================================
-// 18. øQU… PASA SI finally() GENERA UN ERROR?
-// =============================================================================
 
 /*
-Hay una excepciÛn importante.
+13. finally() TAMBI√âN TRANSFIERE LOS ERRORES
 
-Si dentro de finally() ocurre un error:
-
-    ese nuevo error reemplaza el resultado/error anterior
-    y se transmite al siguiente manejador.
-
-
-Conceptualmente:
-
-    Promise
-       |
-       v
-    finally()
-       |
-       +---- genera error
-                |
-                v
-              catch()
-
-
-Esto tiene sentido porque la ejecuciÛn de finally() tambiÈn puede fallar.
+Si la Promise termina con un error, finally() ejecuta su l√≥gica y despu√©s
+el error contin√∫a hacia el siguiente manejador apropiado.
 */
 
+function ejemploFinallyConError() {
+  new Promise((resolve, reject) => {
+    throw new Error("error");
+  })
+    .finally(() => alert("Promise ready"))
+    .catch(error => alert(error));
+}
 
-// =============================================================================
-// 19. RESUMEN DE finally()
-// =============================================================================
 
 /*
-finally():
+Flujo:
 
-    - Se ejecuta tanto con Èxito como con error.
-    - No recibe argumentos.
-    - Est· pensado para limpieza/finalizaciÛn.
-    - Normalmente no modifica el resultado.
-    - Transfiere el resultado al siguiente .then().
-    - Transfiere el error al siguiente .catch().
-    - Si genera un error, ese nuevo error se transmite.
-
-
-IDEA CLAVE:
-
-    finally()
-        = "Haz esto al terminar, sin importar cÛmo terminÛ."
-
-
-NO:
-
-    finally()
-        = "Procesa el resultado"
-
-
-Para procesar el resultado:
-
-    .then()
-
-
-Para procesar errores:
-
-    .catch()
+error
+    ‚Üì
+finally()
+    ‚Üì
+catch(error)
 */
 
-
-// =============================================================================
-// 20. PODEMOS AGREGAR HANDLERS A UNA PROMISE YA TERMINADA
-// =============================================================================
 
 /*
-Una Promise puede estar resuelta ANTES de que agreguemos un .then().
+14. VALORES DEVUELTOS DESDE finally()
 
-Ejemplo:
+Un manejador de finally() no deber√≠a devolver ning√∫n valor.
 
+Si devuelve algo, ese valor es ignorado y el resultado anterior contin√∫a
+hacia el siguiente manejador apropiado.
 */
 
-let promiseYaResuelta = new Promise(resolve => {
+function ejemploValorIgnoradoEnFinally() {
+  new Promise(resolve => {
+    resolve("resultado original");
+  })
+    .finally(() => {
+      return "este valor es ignorado";
+    })
+    .then(resultado => alert(resultado));
+}
 
-    // Se resuelve inmediatamente.
+
+/*
+El .then() contin√∫a recibiendo:
+
+"resultado original"
+*/
+
+
+/*
+15. ERROR GENERADO DENTRO DE finally()
+
+Existe una excepci√≥n al comportamiento anterior.
+
+Si finally() genera un error, ese error pasa al siguiente manejador de errores
+en lugar del resultado anterior.
+*/
+
+function ejemploErrorDentroDeFinally() {
+  new Promise(resolve => {
+    resolve("resultado original");
+  })
+    .finally(() => {
+      throw new Error("Error generado dentro de finally");
+    })
+    .catch(error => alert(error));
+}
+
+
+/*
+Flujo:
+
+resolve("resultado original")
+    ‚Üì
+finally()
+    ‚Üì
+throw new Error(...)
+    ‚Üì
+catch(error)
+*/
+
+
+/*
+16. RESUMEN DE finally()
+
+1. finally() se ejecuta cuando la Promise termina, tanto con √©xito como
+   con error.
+
+2. finally() no recibe el resultado de la operaci√≥n anterior.
+
+3. El resultado o error anterior contin√∫a hacia el siguiente manejador
+   apropiado.
+
+4. Si finally() devuelve un valor, ese valor se ignora.
+
+5. Si finally() genera un error, ese nuevo error contin√∫a hacia el manejador
+   de errores m√°s cercano.
+
+6. finally() est√° pensado principalmente para procedimientos generales de
+   limpieza o finalizaci√≥n.
+*/
+
+
+/*
+17. A√ëADIR MANEJADORES DESPU√âS DE RESOLVER UNA PROMISE
+
+Los manejadores .then(), .catch() y .finally() pueden a√±adirse mientras una
+Promise est√° pendiente.
+
+Tambi√©n pueden a√±adirse despu√©s de que la Promise ya tenga un resultado.
+
+Si el resultado ya existe, el manejador correspondiente podr√° utilizarlo.
+*/
+
+function ejemploManejadorPosterior() {
+  const promesa = new Promise(resolve => {
     resolve("done!");
+  });
 
-});
-
-
-promiseYaResuelta.then(result => {
-
-    console.log(result);
-
-});
+  promesa.then(alert);
+}
 
 
 /*
-Aunque la Promise ya estaba resuelta cuando agregamos .then(),
+Esto hace que las Promises sean m√°s flexibles que la analog√≠a de una lista
+de suscripci√≥n.
 
-    .then()
-
-seguir· recibiendo el resultado.
-
-
-Esto es una caracterÌstica importante de las Promises.
-
-Podemos agregar consumidores aunque el resultado ya exista.
+Los consumidores pueden a√±adirse incluso cuando el resultado ya ha sido
+producido.
 */
 
-
-// =============================================================================
-// 21. CALLBACKS VS PROMISES
-// =============================================================================
 
 /*
-En el capÌtulo anterior tenÌamos:
+18. EJEMPLO PR√ÅCTICO: loadScript CON CALLBACK
 
+Este ejemplo depende del navegador porque utiliza document y elementos
+<script>.
+
+La versi√≥n basada en callbacks necesita recibir la funci√≥n callback desde
+el momento en que se llama a loadScript.
 */
 
-function loadScriptCallback(src, callback) {
+function loadScriptConCallback(src, callback) {
+  const script = document.createElement("script");
 
-    let script = document.createElement("script");
+  script.src = src;
+
+  script.onload = () => callback(null, script);
+
+  script.onerror = () => {
+    callback(new Error(`Script load error for ${src}`));
+  };
+
+  document.head.append(script);
+}
+
+
+/*
+Uso conceptual:
+
+loadScriptConCallback("ruta/script.js", (error, script) => {
+  if (error) {
+    // Manejar error.
+  } else {
+    // Utilizar script.
+  }
+});
+*/
+
+
+/*
+19. loadScript UTILIZANDO PROMISE
+
+La versi√≥n basada en Promise ya no necesita recibir un callback.
+
+La funci√≥n:
+
+1. Crea una Promise.
+2. Inicia la carga del script.
+3. Llama a resolve(script) cuando la carga termina correctamente.
+4. Llama a reject(error) cuando la carga falla.
+5. Devuelve la Promise.
+
+El c√≥digo consumidor puede a√±adir sus manejadores posteriormente mediante
+.then().
+*/
+
+function loadScript(src) {
+  return new Promise(function (resolve, reject) {
+    const script = document.createElement("script");
 
     script.src = src;
 
-    script.onload = () => {
-        callback(null, script);
-    };
+    script.onload = () => resolve(script);
 
     script.onerror = () => {
-        callback(
-            new Error(`Script load error for ${src}`)
-        );
+      reject(new Error(`Script load error for ${src}`));
     };
 
     document.head.append(script);
+  });
 }
 
 
 /*
-Uso:
+20. CONSUMIR loadScript()
 
-    loadScriptCallback("script.js", function(error, script) {
-
-        if (error) {
-            // manejar error
-        } else {
-            // utilizar script
-        }
-
-    });
-
-
-El consumidor tiene que proporcionar el callback
-EN EL MOMENTO de llamar a loadScript().
-
-
-Ahora vamos a cambiar el diseÒo.
-
-
-En lugar de:
-
-    loadScript(src, callback)
-
-
-utilizaremos:
-
-    loadScript(src)
-
-y devolveremos una Promise.
-
-
+El c√≥digo consumidor recibe la Promise devuelta por loadScript() y puede
+registrar funciones mediante .then().
 */
 
+function ejemploUsoLoadScript() {
+  const promesa = loadScript(
+    "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.js"
+  );
 
-// =============================================================================
-// 22. LOADSCRIPT() CON PROMISE
-// =============================================================================
+  promesa.then(
+    script => alert(`${script.src} is loaded!`),
+    error => alert(`Error: ${error.message}`)
+  );
 
-function loadScript(src) {
-
-    return new Promise(function(resolve, reject) {
-
-        let script = document.createElement("script");
-
-        script.src = src;
-
-        // Si se carga correctamente:
-        script.onload = () => {
-
-            resolve(script);
-
-        };
-
-        // Si ocurre un error:
-        script.onerror = () => {
-
-            reject(
-                new Error(`Script load error for ${src}`)
-            );
-
-        };
-
-        document.head.append(script);
-
-    });
-
+  promesa.then(script => {
+    alert("Another handler...");
+  });
 }
 
 
 /*
-Observa la diferencia.
+21. VENTAJA: VARIOS CONSUMIDORES
 
+Una misma Promise puede recibir m√∫ltiples llamadas a .then().
 
-ANTES:
-
-    loadScript(src, callback)
-
-
-AHORA:
-
-    loadScript(src)
-
-
-La funciÛn devuelve:
-
-    Promise
-
-
-La Promise representa:
-
-    "El script todavÌa se est· cargando.
-     Cuando termine, tendr·s el resultado."
-
-
+Cada llamada registra un nuevo consumidor del resultado.
 */
 
+function ejemploVariosConsumidores() {
+  const promesa = new Promise(resolve => {
+    resolve("resultado");
+  });
 
-// =============================================================================
-// 23. UTILIZAR LOADSCRIPT() CON PROMISE
-// =============================================================================
+  promesa.then(resultado => {
+    console.log("Consumidor 1:", resultado);
+  });
 
-let scriptPromise = loadScript("script.js");
+  promesa.then(resultado => {
+    console.log("Consumidor 2:", resultado);
+  });
 
-
-scriptPromise.then(
-
-    // …xito
-    script => {
-
-        console.log(`${script.src} se cargÛ correctamente.`);
-
-    },
-
-    // Error
-    error => {
-
-        console.error(`Error: ${error.message}`);
-
-    }
-
-);
+  promesa.then(resultado => {
+    console.log("Consumidor 3:", resultado);
+  });
+}
 
 
 /*
-Ahora tenemos una separaciÛn m·s clara:
+22. PROMISE FRENTE A CALLBACK
 
-PRODUCTOR:
+Con Promises:
 
-    loadScript()
+Primero iniciamos la operaci√≥n:
 
+const promesa = loadScript(src);
 
-CONSUMIDOR:
+Despu√©s podemos decidir qu√© hacer con el resultado:
 
-    .then()
+promesa.then(...);
 
-
-La funciÛn loadScript() se concentra en:
-
-    "Cargar el script."
-
-
-El consumidor se concentra en:
-
-    "øQuÈ hago cuando termine?"
+Adem√°s, podemos registrar varios consumidores utilizando varias llamadas
+a .then().
 
 
-Esto es una de las grandes ventajas de las Promises.
+Con callbacks:
+
+La funci√≥n callback debe estar disponible cuando llamamos a la funci√≥n:
+
+loadScriptConCallback(src, callback);
+
+Por lo tanto, debemos indicar qu√© hacer con el resultado desde el momento
+en que iniciamos la operaci√≥n.
+
+La versi√≥n presentada en la lecci√≥n utiliza una √∫nica llamada de retorno.
 */
 
 
-// =============================================================================
-// 24. UNA PROMISE PUEDE TENER VARIOS CONSUMIDORES
-// =============================================================================
-
 /*
-Una Promise puede tener m˙ltiples .then().
+23. FLUJO GENERAL DE UNA PROMISE
 
-Por ejemplo:
+Creaci√≥n:
 
-*/
+new Promise(executor)
+    ‚Üì
+executor se ejecuta autom√°ticamente
+    ‚Üì
+operaci√≥n
+    ‚Üì
+resolve(value) o reject(error)
 
-let promiseMultipleHandlers = loadScript("script.js");
 
+√âxito:
 
-promiseMultipleHandlers.then(script => {
+resolve(value)
+    ‚Üì
+.then(resultado => ...)
 
-    console.log("Consumidor 1:", script.src);
 
-});
+Error:
 
-
-promiseMultipleHandlers.then(script => {
-
-    console.log("Consumidor 2:", script.src);
-
-});
-
-
-promiseMultipleHandlers.then(script => {
-
-    console.log("Consumidor 3:", script.src);
-
-});
-
-
-/*
-Los tres consumidores pueden reaccionar al mismo resultado.
-
-
-Conceptualmente:
-
-                     Promise
-                    /   |   \
-                   /    |    \
-                  v     v     v
-                then  then   then
-                  |     |     |
-                  v     v     v
-                 C1    C2    C3
-
-
-Cada .then() agrega un nuevo consumidor.
-
-
-Esto contrasta con el patrÛn de callback anterior,
-donde normalmente proporcion·bamos un ˙nico callback.
-
-
-*/
-
-
-// =============================================================================
-// 25. VENTAJAS FRENTE A CALLBACKS
-// =============================================================================
-
-/*
-VENTAJA 1 ? FLUJO M¡S NATURAL
------------------------------
-
-Con Promise:
-
-*/
-
-let promiseScript = loadScript("script.js");
-
-promiseScript.then(script => {
-
-    console.log("Script cargado.");
-
-});
-
-
-/*
-Primero:
-
-    loadScript()
-
-
-DespuÈs:
-
-    .then(...)
-
-
-La lectura sigue un orden m·s natural:
-
-    "Carga esto."
-
-    "Cuando estÈ listo, haz esto."
-
-
-Con callbacks tenÌamos:
-
-    loadScript("script.js", callback);
-
-
-El callback tenÌa que estar disponible desde el principio.
-
-
-------------------------------------------------------------
-
-VENTAJA 2 ? M⁄LTIPLES CONSUMIDORES
------------------------------------
-
-Podemos hacer:
-
-    promise.then(...)
-    promise.then(...)
-    promise.then(...)
-
-
-Cada uno puede reaccionar al mismo resultado.
-
-
-------------------------------------------------------------
-
-VENTAJA 3 ? MEJOR SEPARACI”N
-----------------------------
-
-El cÛdigo productor crea la Promise.
-
-El cÛdigo consumidor decide quÈ hacer con ella.
-
-
-------------------------------------------------------------
-
-VENTAJA 4 ? MANEJO DE ERRORES
------------------------------
-
-Tenemos:
-
-    .catch()
-
-
-para manejar errores de manera m·s cÛmoda.
-
-
-------------------------------------------------------------
-
-VENTAJA 5 ? EVITAMOS PARTE DEL CALLBACK HELL
----------------------------------------------
-
-Las Promises est·n diseÒadas para poder encadenarse.
-
-Esto ser· especialmente importante en:
-
-    PROMISE CHAINING
-
-que se ver· en el siguiente tema.
-*/
-
-
-// =============================================================================
-// 26. COMPARACI”N DIRECTA
-// =============================================================================
-
-/*
-
-                CALLBACKS                    PROMISES
-                ---------                    --------
-
-
-PRODUCTOR:
-
-    loadScript(src, callback)       loadScript(src)
-
-
-CONSUMIDOR:
-
-    callback(...)                   promise.then(...)
-
-
-ERROR:
-
-    callback(error)                 promise.catch(...)
-
-
-LIMPIEZA:
-
-    manual / callback              promise.finally(...)
-
-
-M⁄LTIPLES CONSUMIDORES:
-
-    normalmente un callback        m˙ltiples .then()
-
-
-CADENAS:
-
-    callbacks anidados             encadenamiento de Promises
-
-
-*/
-
-
-// =============================================================================
-// 27. FLUJO COMPLETO DE UNA PROMISE
-// =============================================================================
-
-/*
-Podemos resumir todo el funcionamiento:
-
-    new Promise(executor)
-             |
-             v
-        executor()
-             |
-             v
-        øquÈ ocurre?
-          /       \
-         /         \
-        v           v
-    resolve()     reject()
-        |           |
-        v           v
-    fulfilled    rejected
-        |           |
-        +-----+-----+
-              |
-              v
-       consumidores
-              |
-       +------+------+------+
-       |      |      |      |
-       v      v      v      v
-     then   catch  finally  ...
-*/
-
-
-// =============================================================================
-// 28. EJEMPLO COMPLETO
-// =============================================================================
-
-/*
-Creamos una Promise que simula una operaciÛn que tarda 2 segundos.
-*/
-
-let operacion = new Promise((resolve, reject) => {
-
-    setTimeout(() => {
-
-        // Simulamos Èxito.
-        resolve("OperaciÛn completada.");
-
-    }, 2000);
-
-});
-
-
-operacion
-
-    // Se ejecuta siempre al finalizar.
-    .finally(() => {
-
-        console.log("La operaciÛn terminÛ.");
-
-    })
-
-    // Procesamos el resultado.
-    .then(resultado => {
-
-        console.log("Resultado:", resultado);
-
-    })
-
-    // Procesamos un posible error.
-    .catch(error => {
-
-        console.error("Error:", error);
-
-    });
-
-
-/*
-Flujo en caso de Èxito:
-
-    pending
-       |
-       | 2 segundos
-       v
-    resolve()
-       |
-       v
-    fulfilled
-       |
-       v
-    finally()
-       |
-       v
-    then()
-       |
-       v
-    resultado
-
-
-Flujo en caso de error:
-
-    pending
-       |
-       v
-    reject()
-       |
-       v
-    rejected
-       |
-       v
-    finally()
-       |
-       v
-    catch()
-       |
-       v
-    error
-
-
-*/
-
-
-// =============================================================================
-// 29. CONCEPTOS QUE DEBES DOMINAR
-// =============================================================================
-
-/*
-PROMISE
--------
-
-Objeto que representa el resultado futuro de una operaciÛn.
-
-
-EXECUTOR
---------
-
-FunciÛn que recibe new Promise() y que se ejecuta autom·ticamente.
-
-
-RESOLVE
--------
-
-Indica que la operaciÛn terminÛ correctamente.
-
-    resolve(resultado)
-
-
-REJECT
-------
-
-Indica que la operaciÛn terminÛ con error.
-
-    reject(error)
-
-
-PENDING
--------
-
-La Promise todavÌa no terminÛ.
-
-
-FULFILLED
----------
-
-La Promise terminÛ correctamente.
-
-
-REJECTED
---------
-
-La Promise terminÛ con error.
-
-
-THEN
-----
-
-Permite reaccionar al resultado exitoso y/o al error.
-
-    promise.then(success, error)
-
-
-CATCH
------
-
-Permite reaccionar a errores.
-
-    promise.catch(error)
-
-
-FINALLY
--------
-
-Permite ejecutar cÛdigo de limpieza/finalizaciÛn
-independientemente de si hubo Èxito o error.
-
-    promise.finally(cleanup)
-
-
-*/
-
-
-// =============================================================================
-// 30. REGLAS IMPORTANTES PARA MEMORIZAR
-// =============================================================================
-
-/*
-
-REGLA 1
--------
-El executor se ejecuta autom·ticamente.
-
-    new Promise(executor)
-
-
-REGLA 2
--------
-Una Promise comienza en:
-
-    pending
-
-
-REGLA 3
--------
-Una Promise puede terminar en:
-
-    fulfilled
-    rejected
-
-
-REGLA 4
--------
-Una Promise solamente puede cambiar de estado UNA VEZ.
-
-    pending -> fulfilled
+reject(error)
+    ‚Üì
+.then(null, error => ...)
 
 o:
 
-    pending -> rejected
+reject(error)
+    ‚Üì
+.catch(error => ...)
 
 
-Nunca:
+Finalizaci√≥n:
 
-    fulfilled -> rejected
-
-ni:
-
-    rejected -> fulfilled
-
-
-REGLA 5
--------
-resolve() significa Èxito.
-
-    resolve(value)
-
-
-REGLA 6
--------
-reject() significa error.
-
-    reject(error)
-
-
-REGLA 7
--------
-Se recomienda rechazar con un objeto Error.
-
-    reject(new Error("Mensaje"))
-
-
-REGLA 8
--------
-.then() maneja resultados y opcionalmente errores.
-
-    promise.then(success, error)
-
-
-REGLA 9
--------
-.catch() es equivalente a:
-
-    then(null, errorHandler)
-
-
-REGLA 10
---------
-.finally() se ejecuta tanto con Èxito como con error.
-
-
-REGLA 11
---------
-finally() no recibe el resultado ni el error.
-
-
-REGLA 12
---------
-finally() normalmente permite que el resultado/error contin˙e
-hacia el siguiente handler.
-
-
-REGLA 13
---------
-Una Promise puede tener m˙ltiples consumidores:
-
-    promise.then(...)
-    promise.then(...)
-    promise.then(...)
-
-
-REGLA 14
---------
-Una Promise puede tener consumidores incluso despuÈs de haberse
-resuelto.
-
-
-REGLA 15
---------
-Las Promises permiten separar:
-
-    PRODUCCI”N DEL RESULTADO
-
-de:
-
-    CONSUMO DEL RESULTADO.
-
-
-===============================================================================
-RESUMEN FINAL
-===============================================================================
-
-CALLBACK:
-
-    "Cuando termines, llama a esta funciÛn."
-
-
-PROMISE:
-
-    "AquÌ tienes un objeto que representa el resultado futuro.
-     Puedes suscribirte a Èl mediante .then(), .catch() y .finally()."
-
-
-CALLBACK:
-
-    operaciÛn(callback)
-
-
-PROMISE:
-
-    let promise = operaciÛn();
-
-    promise.then(...);
-
-
-CALLBACK HELL:
-
-    operaciÛn1(() => {
-        operaciÛn2(() => {
-            operaciÛn3(() => {
-                ...
-            });
-        });
-    });
-
-
-PROMISES:
-
-    operaciÛn1()
-        .then(...)
-        .then(...)
-        .then(...)
-
-
-La principal idea que debes llevarte de este capÌtulo es:
-
-    Una Promise representa el resultado futuro de una operaciÛn.
-
-Y tiene tres estados importantes:
-
-    pending
-       |
-       +----> fulfilled
-       |
-       +----> rejected
-
-
-Para consumirla utilizamos:
-
-    .then()
-    .catch()
-    .finally()
-
-
-El siguiente concepto importante ser·:
-
-    PROMISE CHAINING
-
-es decir, cÛmo encadenar m˙ltiples operaciones asÌncronas
-utilizando Promises.
+resolve/reject
+    ‚Üì
+.finally(() => ...)
+    ‚Üì
+resultado o error contin√∫a al siguiente manejador apropiado
 */
+
+
+/*
+RESUMEN
+
+1. Una Promise conecta c√≥digo productor y c√≥digo consumidor.
+
+2. Se crea mediante:
+
+   new Promise((resolve, reject) => {
+     // trabajo
+   });
+
+3. El executor se ejecuta autom√°ticamente.
+
+4. resolve(value) indica que la operaci√≥n termin√≥ correctamente.
+
+5. reject(error) indica que la operaci√≥n termin√≥ con un error.
+
+6. Una Promise comienza con state "pending".
+
+7. Despu√©s puede pasar a "fulfilled" o "rejected".
+
+8. Una Promise solo puede establecer un resultado definitivo.
+   Las llamadas posteriores a resolve() o reject() son ignoradas.
+
+9. Se recomienda utilizar objetos Error al rechazar una Promise.
+
+10. resolve() y reject() pueden ejecutarse despu√©s de una operaci√≥n que
+    requiere tiempo o inmediatamente.
+
+11. .then() permite manejar √©xito y error.
+
+12. .catch() es una forma abreviada de:
+
+    .then(null, manejadorDeError)
+
+13. .finally() permite realizar procedimientos generales de limpieza o
+    finalizaci√≥n.
+
+14. finally() no recibe el resultado anterior.
+
+15. finally() normalmente transmite el resultado o error original al siguiente
+    manejador.
+
+16. Un valor devuelto por finally() se ignora.
+
+17. Un error generado dentro de finally() pasa al siguiente manejador de
+    errores.
+
+18. Los manejadores pueden a√±adirse incluso despu√©s de que la Promise ya tenga
+    un resultado.
+
+19. Una misma Promise puede tener m√∫ltiples consumidores mediante m√∫ltiples
+    llamadas a .then().
+
+20. En el ejemplo loadScript(), utilizar una Promise permite separar el inicio
+    de la operaci√≥n de los consumidores que procesar√°n posteriormente su
+    resultado.
+*/
+
+
+/*
+ACTIVACI√ìN MANUAL
+
+Descomenta solamente el ejemplo que quieras probar.
+
+Los ejemplos que utilizan alert(), document o carga de scripts necesitan un
+entorno de navegador.
+*/
+
+// ejemploPromesaResuelta().then(resultado => console.log(resultado));
+
+// ejemploResolve().then(resultado => console.log(resultado));
+
+// ejemploReject().catch(error => console.log(error));
+
+// ejemploUnSoloResultado().then(resultado => console.log(resultado));
+
+// ejemploResolucionInmediata().then(resultado => console.log(resultado));
+
+// ejemploThenExitoso();
+
+// ejemploThenConError();
+
+// ejemploThenSoloExito();
+
+// ejemploCatch();
+
+// ejemploCatchEquivalente();
+
+// ejemploFinallyConResultado();
+
+// ejemploFinallyConError();
+
+// ejemploValorIgnoradoEnFinally();
+
+// ejemploErrorDentroDeFinally();
+
+// ejemploManejadorPosterior();
+
+// ejemploUsoLoadScript();
+
+// ejemploVariosConsumidores();

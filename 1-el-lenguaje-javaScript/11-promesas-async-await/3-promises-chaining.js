@@ -1,486 +1,612 @@
 /*
-============================================================
 ENCADENAMIENTO DE PROMESAS
-============================================================
 
-El encadenamiento de promesas permite ejecutar operaciones
-asíncronas en secuencia y pasar el resultado de una operación
-a la siguiente.
+Una secuencia de tareas asíncronas puede necesitar ejecutarse una tras otra.
+El encadenamiento de promesas permite transmitir el resultado de una operación
+al siguiente manejador .then() de la cadena.
 
-La estructura básica es:
-
-Promise
-    .then()
-    .then()
-    .then()
-
-============================================================
-1. REGLA PRINCIPAL
-============================================================
-
-Cada .then() devuelve una NUEVA Promise.
-
-Si el handler devuelve un valor:
-
-    return valor;
-
-ese valor pasa al siguiente .then().
+Fuente del contenido:
+:chatgpt-content-reference{index="0"}
 */
 
-Promise.resolve(1)
+/*
+1. ENCADENAMIENTO BÁSICO
 
-    .then(result => {
-        return result * 2;
+Cada llamada a .then() devuelve una nueva promesa.
+
+Cuando un manejador devuelve un valor, ese valor se convierte en el resultado
+de la promesa devuelta por .then(). El siguiente .then() recibe ese resultado.
+
+Flujo:
+
+promesa inicial
+-> resolve(1)
+-> primer .then() recibe 1 y devuelve 2
+-> segundo .then() recibe 2 y devuelve 4
+-> tercer .then() recibe 4
+*/
+
+function ejemploEncadenamientoBasico() {
+  new Promise(function (resolve, reject) {
+    setTimeout(() => resolve(1), 1000);
+  })
+    .then(function (resultado) {
+      alert(resultado); // 1
+      return resultado * 2;
     })
-
-    .then(result => {
-        console.log(result); // 2
+    .then(function (resultado) {
+      alert(resultado); // 2
+      return resultado * 2;
+    })
+    .then(function (resultado) {
+      alert(resultado); // 4
+      return resultado * 2;
     });
+}
+
+/*
+La idea principal es que el resultado se transmite a través de la cadena.
+
+Cada .then() trabaja con la promesa devuelta por el .then() anterior.
+Por eso el resultado puede transformarse progresivamente:
+
+1 -> 2 -> 4
+*/
 
 
 /*
-============================================================
-2. ENCADENAR VARIOS .then()
-============================================================
+2. VARIOS .then() SOBRE LA MISMA PROMESA NO FORMAN UNA CADENA
 
-Cada .then() recibe el resultado del anterior.
+Es posible agregar varios manejadores .then() directamente a una misma promesa,
+pero esto no es encadenamiento.
+
+Cada manejador recibe de manera independiente el resultado original de la
+promesa. Los valores devueltos por esos manejadores no se pasan entre ellos.
+
+En este ejemplo, los tres manejadores reciben 1.
 */
 
-Promise.resolve(1)
+function ejemploVariosThenIndependientes() {
+  const promesa = new Promise(function (resolve, reject) {
+    setTimeout(() => resolve(1), 1000);
+  });
 
-    .then(result => {
-        return result * 2;
+  promesa.then(function (resultado) {
+    alert(resultado); // 1
+    return resultado * 2;
+  });
+
+  promesa.then(function (resultado) {
+    alert(resultado); // 1
+    return resultado * 2;
+  });
+
+  promesa.then(function (resultado) {
+    alert(resultado); // 1
+    return resultado * 2;
+  });
+}
+
+/*
+Diferencia importante:
+
+Encadenamiento:
+
+promesa
+  .then(...)
+  .then(...)
+  .then(...)
+
+Cada manejador recibe el resultado del anterior.
+
+Manejadores independientes:
+
+promesa.then(...)
+promesa.then(...)
+promesa.then(...)
+
+Todos reciben el resultado de la misma promesa original.
+
+En la práctica, el encadenamiento se utiliza con mucha más frecuencia.
+*/
+
+
+/*
+3. DEVOLVER UNA PROMESA DESDE .then()
+
+Un manejador de .then() también puede crear y devolver otra promesa.
+
+Cuando eso ocurre, el resto de la cadena espera hasta que esa promesa se
+estabilice. Después, su resultado se entrega al siguiente manejador.
+
+Esto permite construir cadenas de acciones asíncronas.
+*/
+
+function ejemploDevolverPromesas() {
+  new Promise(function (resolve, reject) {
+    setTimeout(() => resolve(1), 1000);
+  })
+    .then(function (resultado) {
+      alert(resultado); // 1
+
+      return new Promise((resolve, reject) => {
+        setTimeout(() => resolve(resultado * 2), 1000);
+      });
     })
+    .then(function (resultado) {
+      alert(resultado); // 2
 
-    .then(result => {
-        return result * 2;
+      return new Promise((resolve, reject) => {
+        setTimeout(() => resolve(resultado * 2), 1000);
+      });
     })
-
-    .then(result => {
-        console.log(result); // 4
+    .then(function (resultado) {
+      alert(resultado); // 4
     });
-
+}
 
 /*
-El resultado se va transmitiendo:
+Flujo:
 
-    1 → 2 → 4
+resolve(1)
+-> primer .then()
+-> devuelve una nueva Promise
+-> la cadena espera
+-> resolve(2)
+-> segundo .then()
+-> devuelve otra Promise
+-> la cadena espera
+-> resolve(4)
+-> tercer .then()
 
+El resultado sigue siendo:
 
-La idea importante es:
+1 -> 2 -> 4
 
-    .then()
-        ↓
-    return
-        ↓
-    siguiente .then()
+Pero ahora existe un retraso de un segundo entre cada resultado.
 */
 
 
 /*
-============================================================
-3. DEVOLVER UNA PROMESA
-============================================================
+4. CARGAR SCRIPTS EN SECUENCIA
 
-Si un .then() devuelve una Promise:
+El contenido utiliza la función loadScript() definida en el capítulo anterior.
 
-    return promise;
+Cada llamada a loadScript() devuelve una promesa. La siguiente carga comienza
+solamente cuando la anterior se ha resuelto.
 
-el siguiente .then() ESPERA a que esa Promise termine.
-
-Esto permite ejecutar operaciones asíncronas una después
-de otra.
+Este ejemplo depende del navegador y de una función loadScript() existente.
 */
 
-Promise.resolve(1)
-
-    .then(result => {
-
-        return new Promise(resolve => {
-
-            setTimeout(() => {
-                resolve(result * 2);
-            }, 1000);
-
-        });
-
+function ejemploCargaScriptsSecuencial() {
+  loadScript("/article/promise-chaining/one.js")
+    .then(function (script) {
+      return loadScript("/article/promise-chaining/two.js");
     })
-
-    .then(result => {
-
-        console.log(result); // 2
-
+    .then(function (script) {
+      return loadScript("/article/promise-chaining/three.js");
+    })
+    .then(function (script) {
+      one();
+      two();
+      three();
     });
-
+}
 
 /*
-REGLA PARA RECORDAR:
+La misma cadena puede escribirse de forma más breve con funciones flecha.
+*/
 
-    return valor
-        → pasa el valor
+function ejemploCargaScriptsConFlechas() {
+  loadScript("/article/promise-chaining/one.js")
+    .then(script => loadScript("/article/promise-chaining/two.js"))
+    .then(script => loadScript("/article/promise-chaining/three.js"))
+    .then(script => {
+      one();
+      two();
+      three();
+    });
+}
 
-    return Promise
-        → espera la Promise
+/*
+La ventaja del encadenamiento es que el código permanece plano: crece hacia
+abajo en lugar de anidarse progresivamente hacia la derecha.
+
+Podemos añadir nuevas acciones asíncronas manteniendo esta estructura.
 */
 
 
 /*
-============================================================
-4. ERROR CLÁSICO
-============================================================
+5. PROMESAS ANIDADAS EN LUGAR DE ENCADENADAS
 
-Esto NO es encadenamiento.
+Técnicamente, también podríamos agregar un .then() dentro de otro .then().
+El resultado puede ser el mismo, pero el código comienza a crecer hacia la
+derecha, reproduciendo el problema de las funciones de devolución de llamada.
+
+Este ejemplo también depende de loadScript().
 */
 
-const promise = Promise.resolve(1);
+function ejemploPromesasAnidadas() {
+  loadScript("/article/promise-chaining/one.js").then(script1 => {
+    loadScript("/article/promise-chaining/two.js").then(script2 => {
+      loadScript("/article/promise-chaining/three.js").then(script3 => {
+        one();
+        two();
+        three();
+      });
+    });
+  });
+}
 
-promise.then(result => {
-    console.log(result); // 1
-});
+/*
+Generalmente se prefiere:
 
-promise.then(result => {
-    console.log(result); // 1
-});
+loadScript(...)
+  .then(...)
+  .then(...)
+  .then(...)
 
-promise.then(result => {
-    console.log(result); // 1
-});
+en lugar de anidar manejadores.
+
+Una posible razón para utilizar la forma anidada es que una función interna
+puede acceder a las variables de los ámbitos externos.
+
+En el ejemplo anterior, el manejador más interno tiene acceso a:
+
+script1
+script2
+script3
+
+Eso puede ser útil en algunos casos, pero es una excepción y no la regla.
+*/
 
 
 /*
-Los tres .then() reciben el mismo resultado original.
+6. OBJETOS THENABLE
 
-No ocurre:
+Un manejador no tiene que devolver exactamente una instancia de Promise.
 
-    1 → 2 → 4
+También puede devolver un objeto "thenable": un objeto que posee un método
+invocable llamado .then().
 
-Sino que son tres handlers independientes.
-
-Para encadenar correctamente:
-
-    promise
-        .then(...)
-        .then(...)
-        .then(...)
+JavaScript trata ese objeto de forma similar a una promesa.
 */
 
+class Thenable {
+  constructor(numero) {
+    this.numero = numero;
+  }
 
-/*
-============================================================
-5. FETCH Y PROMESAS
-============================================================
+  then(resolve, reject) {
+    alert(resolve); // function() { native code }
 
-fetch() devuelve una Promise.
+    setTimeout(() => resolve(this.numero * 2), 1000);
+  }
+}
 
-Por eso podemos utilizarlo directamente en un
-encadenamiento.
-*/
-
-fetch("/user.json")
-
-    .then(response => {
-        return response.json();
+function ejemploThenable() {
+  new Promise(resolve => resolve(1))
+    .then(resultado => {
+      return new Thenable(resultado);
     })
-
-    .then(user => {
-        console.log(user);
-});
-
+    .then(alert); // Muestra 2 después de 1000 ms.
+}
 
 /*
-response.json() también devuelve una Promise.
+Cuando un manejador devuelve un objeto, JavaScript comprueba si posee un método
+invocable llamado then.
 
-Por eso podemos hacer:
+Si existe, JavaScript llama a ese método proporcionando funciones nativas
+resolve y reject como argumentos y espera hasta que se invoque una de ellas.
 
-    fetch()
-        ↓
-    response.json()
-        ↓
-    user
+En el ejemplo:
+
+1. La promesa inicial se resuelve con 1.
+2. El primer .then() devuelve new Thenable(1).
+3. JavaScript encuentra su método then().
+4. Después de un segundo se ejecuta resolve(2).
+5. El siguiente .then() recibe 2.
+
+Esto permite integrar objetos personalizados en cadenas de promesas sin que
+tengan que heredar de Promise.
 */
 
 
 /*
-============================================================
-6. ENCADENAR VARIAS SOLICITUDES
-============================================================
+7. FETCH Y EL ENCADENAMIENTO DE PROMESAS
 
-El resultado de una solicitud puede utilizarse para realizar
-otra.
+En programación frontend, las promesas se utilizan frecuentemente para
+solicitudes de red.
+
+La sintaxis básica mostrada en el contenido es:
+
+let promise = fetch(url);
+
+fetch() realiza una solicitud de red y devuelve una promesa.
+
+Esa promesa se resuelve con un objeto response cuando el servidor remoto
+responde con los encabezados, antes de que se haya descargado completamente
+el contenido de la respuesta.
 */
 
-fetch("/user.json")
 
+/*
+8. response.text()
+
+Para obtener el texto completo de la respuesta se utiliza response.text().
+
+response.text() devuelve otra promesa que se resuelve cuando el contenido
+completo ha sido descargado.
+
+Este ejemplo realiza una solicitud de red y depende del navegador.
+*/
+
+function ejemploFetchTexto() {
+  fetch("/article/promise-chaining/user.json")
+    .then(function (response) {
+      return response.text();
+    })
+    .then(function (texto) {
+      alert(texto); // {"name": "iliakan", "isAdmin": true}
+    });
+}
+
+/*
+Flujo:
+
+fetch(...)
+-> llega la respuesta del servidor
+-> response.text()
+-> espera la descarga completa del texto
+-> siguiente .then()
+-> recibe el texto
+*/
+
+
+/*
+9. response.json()
+
+El objeto response también posee response.json().
+
+Este método lee los datos remotos y los analiza como JSON. Como devuelve una
+promesa, puede integrarse directamente en la cadena.
+*/
+
+function ejemploFetchJson() {
+  fetch("/article/promise-chaining/user.json")
     .then(response => response.json())
-
-    .then(user => {
-
-        return fetch(
-            `https://api.github.com/users/${user.name}`
-        );
-
-    })
-
-    .then(response => response.json())
-
-    .then(githubUser => {
-
-        console.log(githubUser);
-
-    });
-
-
-/*
-La secuencia es:
-
-    fetch()
-        ↓
-    response.json()
-        ↓
-    user
-        ↓
-    fetch(GitHub)
-        ↓
-    response.json()
-        ↓
-    githubUser
-*/
-
-
-/*
-============================================================
-7. IMPORTANCIA DE RETURN
-============================================================
-
-Si quieres que la siguiente etapa espere una Promise,
-DEBES DEVOLVERLA.
-
-INCORRECTO:
-*/
-
-fetch("/user.json")
-
-    .then(response => {
-
-        response.json();
-
-    })
-
-    .then(user => {
-
-        console.log(user);
-
-    });
-
-
-/*
-El problema es que response.json() no fue retornado.
-
-CORRECTO:
-*/
-
-fetch("/user.json")
-
-    .then(response => {
-
-        return response.json();
-
-    })
-
-    .then(user => {
-
-        console.log(user);
-
-    });
-
-
-/*
-Con arrow functions también podemos escribir:
-
-    .then(response => response.json())
-
-porque existe un return implícito.
-*/
-
-
-/*
-============================================================
-8. FUNCIONES ASÍNCRONAS
-============================================================
-
-Si una función realiza una operación asíncrona y queremos
-encadenarla, debe devolver una Promise.
-*/
-
-function esperar(ms) {
-
-    return new Promise(resolve => {
-
-        setTimeout(resolve, ms);
-
-    });
-
+    .then(usuario => alert(usuario.name)); // iliakan
 }
 
 
-esperar(1000)
+/*
+10. ENCADENAR VARIAS SOLICITUDES
 
-    .then(() => {
+Después de obtener un usuario, el resultado puede utilizarse para iniciar otra
+solicitud.
 
-        console.log("Pasó 1 segundo");
+En este ejemplo:
 
-        return esperar(1000);
+1. Se obtiene user.json.
+2. Se analiza como JSON.
+3. Se utiliza user.name para consultar GitHub.
+4. La respuesta de GitHub se analiza como JSON.
+5. Se muestra el avatar durante tres segundos.
 
-    })
+El ejemplo depende del navegador, de la red y del DOM.
+*/
 
-    .then(() => {
+function ejemploAvatarSinPromesaFinal() {
+  fetch("/article/promise-chaining/user.json")
+    .then(response => response.json())
+    .then(usuario => fetch(`https://api.github.com/users/${usuario.name}`))
+    .then(response => response.json())
+    .then(usuarioGithub => {
+      const imagen = document.createElement("img");
 
-        console.log("Pasaron 2 segundos");
+      imagen.src = usuarioGithub.avatar_url;
+      imagen.className = "promise-avatar-example";
 
+      document.body.append(imagen);
+
+      setTimeout(() => imagen.remove(), 3000);
     });
-
+}
 
 /*
-============================================================
-9. THENABLE
-============================================================
+PROBLEMA DEL EJEMPLO ANTERIOR
 
-Un thenable es un objeto que posee un método .then().
+El último manejador inicia una operación asíncrona mediante setTimeout(), pero
+no devuelve una promesa que represente esa operación.
 
-JavaScript puede tratarlo de forma similar a una Promise.
+Por eso la cadena no tiene una forma de esperar hasta que:
 
-Concepto:
+1. Pasen los tres segundos.
+2. El avatar sea eliminado.
+3. Termine realmente esa acción asíncrona.
 
-    objeto
-        ↓
-    tiene .then()
-        ↓
-    thenable
-
-No es necesario memorizar su implementación para entender
-el encadenamiento de promesas.
+Si quisiéramos continuar con otra acción después de eliminar el avatar,
+necesitaríamos representar esa espera mediante una promesa.
 */
 
 
 /*
-============================================================
-10. ESQUEMA MENTAL
-============================================================
+11. HACER EXTENSIBLE LA CADENA
 
-                    Promise
-                    ↓
-                    .then()
-                    ↓
-                devuelve algo
-                    ↓
-            ┌────────┴────────┐
-            ↓                 ↓
-            valor            Promise
-            ↓                 ↓
-        siguiente .then()    esperar
-                                ↓
-                        siguiente .then()
+Para que la cadena pueda continuar después de que desaparezca el avatar,
+el manejador debe devolver una nueva Promise.
 
+La promesa solamente se resuelve después de eliminar la imagen.
 
-La regla más importante:
+El siguiente .then() espera esa resolución.
+*/
 
-    RETURN VALOR
-    → pasa el resultado
+function ejemploAvatarConPromesaFinal() {
+  fetch("/article/promise-chaining/user.json")
+    .then(response => response.json())
+    .then(usuario => fetch(`https://api.github.com/users/${usuario.name}`))
+    .then(response => response.json())
+    .then(
+      usuarioGithub =>
+        new Promise(function (resolve, reject) {
+          const imagen = document.createElement("img");
 
+          imagen.src = usuarioGithub.avatar_url;
+          imagen.className = "promise-avatar-example";
 
-    RETURN PROMISE
-    → espera el resultado
+          document.body.append(imagen);
+
+          setTimeout(() => {
+            imagen.remove();
+            resolve(usuarioGithub);
+          }, 3000);
+        })
+    )
+    .then(usuarioGithub => {
+      alert(`Finished showing ${usuarioGithub.name}`);
+    });
+}
+
+/*
+Flujo:
+
+fetch user.json
+-> response.json()
+-> fetch GitHub
+-> response.json()
+-> crear y mostrar avatar
+-> devolver Promise
+-> esperar 3 segundos
+-> eliminar avatar
+-> resolve(usuarioGithub)
+-> siguiente .then()
+
+La clave es que la acción asíncrona devuelve una promesa que representa su
+finalización.
+
+Como buena práctica presentada en el contenido, una acción asíncrona debe
+devolver una promesa para permitir planificar acciones posteriores.
 */
 
 
 /*
-============================================================
-11. CHULETA FINAL
-============================================================
+12. DIVIDIR LA CADENA EN FUNCIONES REUTILIZABLES
 
-ENCADENAMIENTO:
+El mismo flujo puede separarse en funciones con responsabilidades concretas.
 
-    promise
-        .then(resultado => ...)
-        .then(resultado => ...)
-        .then(resultado => ...)
-
-
-PASAR UN VALOR:
-
-    .then(() => {
-        return 10;
-    })
-
-    .then(value => {
-        console.log(value); // 10
-    })
-
-
-ESPERAR UNA PROMESA:
-
-    .then(() => {
-        return fetch(url);
-    })
-
-    .then(response => {
-        // fetch terminó
-    })
-
-
-NO CONFUNDIR:
-
-    promise.then(a);
-    promise.then(b);
-    promise.then(c);
-
-    = handlers independientes
-
-
-    promise
-        .then(a)
-        .then(b)
-        .then(c);
-
-    = encadenamiento
-
-
-============================================================
-CONCEPTOS QUE DEBES RECORDAR
-============================================================
-
-1. Cada .then() devuelve una nueva Promise.
-
-2. return valor
-    → el valor pasa al siguiente .then().
-
-3. return Promise
-    → el siguiente .then() espera esa Promise.
-
-4. Varios .then() sobre la misma Promise
-    → no forman una cadena.
-
-5. Para encadenar:
-
-    promise
-        .then()
-        .then()
-        .then()
-
-6. Las funciones asíncronas deben devolver una Promise
-    si queremos incorporarlas a una cadena.
-
-7. fetch(), response.json() y response.text()
-    trabajan con Promises.
-
-
-============================================================
-FRASE PARA MEMORIZAR
-============================================================
-
-    RETURN = PASAR EL RESULTADO
-
-    RETURN PROMISE = ESPERAR
-
-============================================================
+Este código depende del navegador, de fetch(), del DOM y de la red.
 */
+
+function cargarJson(url) {
+  return fetch(url).then(response => response.json());
+}
+
+function cargarUsuarioGithub(nombre) {
+  return cargarJson(`https://api.github.com/users/${nombre}`);
+}
+
+function mostrarAvatar(usuarioGithub) {
+  return new Promise(function (resolve, reject) {
+    const imagen = document.createElement("img");
+
+    imagen.src = usuarioGithub.avatar_url;
+    imagen.className = "promise-avatar-example";
+
+    document.body.append(imagen);
+
+    setTimeout(() => {
+      imagen.remove();
+      resolve(usuarioGithub);
+    }, 3000);
+  });
+}
+
+function ejemploFuncionesReutilizables() {
+  cargarJson("/article/promise-chaining/user.json")
+    .then(usuario => cargarUsuarioGithub(usuario.name))
+    .then(mostrarAvatar)
+    .then(usuarioGithub => {
+      alert(`Finished showing ${usuarioGithub.name}`);
+    });
+}
+
+
+/*
+RESUMEN
+
+1. Cada llamada a .then() devuelve una nueva promesa.
+
+2. Cuando un manejador devuelve un valor, ese valor se convierte en el
+   resultado que recibe el siguiente .then().
+
+3. Una cadena permite transformar resultados progresivamente:
+
+   1 -> 2 -> 4
+
+4. Agregar varios .then() directamente a una misma promesa no es
+   encadenamiento. Todos esos manejadores reciben el mismo resultado original.
+
+5. Un manejador puede devolver una Promise.
+
+6. Si un manejador devuelve una promesa, el resto de la cadena espera hasta
+   que esa promesa se estabilice.
+
+7. Cuando la promesa devuelta termina, su resultado o error pasa al siguiente
+   nivel de la cadena.
+
+8. Devolver promesas permite construir secuencias de acciones asíncronas.
+
+9. El encadenamiento mantiene el código plano y evita la anidación progresiva
+   de manejadores.
+
+10. Un manejador también puede devolver un objeto thenable: un objeto con un
+    método invocable llamado then.
+
+11. Los objetos thenable pueden integrarse en una cadena sin heredar de
+    Promise.
+
+12. fetch() devuelve una promesa que se resuelve con un objeto response cuando
+    el servidor responde con los encabezados.
+
+13. response.text() devuelve una promesa que obtiene el texto completo de la
+    respuesta.
+
+14. response.json() devuelve una promesa que lee y analiza la respuesta como
+    JSON.
+
+15. Si una acción asíncrona debe formar parte del flujo de una cadena, debe
+    devolver una promesa que represente su finalización.
+
+16. De esta forma, las acciones posteriores pueden esperar correctamente y la
+    cadena permanece extensible.
+*/
+
+
+/*
+ACTIVACIÓN MANUAL
+
+Descomenta solamente el ejemplo que quieras probar.
+
+Los ejemplos utilizan alert(), setTimeout(), fetch(), operaciones de red,
+funciones dependientes de otros scripts o manipulaciones del DOM, por lo que
+no se ejecutan automáticamente.
+*/
+
+// ejemploEncadenamientoBasico();
+// ejemploVariosThenIndependientes();
+// ejemploDevolverPromesas();
+
+// Requieren la función loadScript() y los scripts correspondientes:
+// ejemploCargaScriptsSecuencial();
+// ejemploCargaScriptsConFlechas();
+// ejemploPromesasAnidadas();
+
+// Usa alert() y setTimeout():
+// ejemploThenable();
+
+// Requieren navegador y solicitudes de red:
+// ejemploFetchTexto();
+// ejemploFetchJson();
+// ejemploAvatarSinPromesaFinal();
+// ejemploAvatarConPromesaFinal();
+// ejemploFuncionesReutilizables();
