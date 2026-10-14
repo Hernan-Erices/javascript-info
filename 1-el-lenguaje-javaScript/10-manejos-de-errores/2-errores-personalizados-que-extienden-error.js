@@ -1,24 +1,38 @@
-/**
- * ERRORES PERSONALIZADOS QUE EXTIENDEN ERROR
- *
- * Podemos crear clases de error propias para representar problemas
- * especÌficos de nuestra aplicaciÛn.
- *
- * Al heredar de Error podemos conservar las caracterÌsticas b·sicas
- * de los errores y utilizar instanceof para identificarlos.
- */
+/*
+ERRORES PERSONALIZADOS: EXTENDER ERROR
+
+En una aplicaci√≥n puede ser √∫til crear clases de error propias para representar
+situaciones espec√≠ficas, por ejemplo:
+
+- HttpError
+- DbError
+- NotFoundError
+- ValidationError
+
+Los errores personalizados deber√≠an conservar las propiedades b√°sicas de Error,
+como message, name y stack. Tambi√©n pueden a√±adir propiedades propias.
+
+Aunque JavaScript permite usar throw con cualquier valor, heredar de Error permite
+identificar los errores mediante instanceof Error.
+
+Adem√°s, los errores personalizados pueden formar jerarqu√≠as mediante herencia.
+Por ejemplo, un error m√°s espec√≠fico puede heredar de otro error personalizado.
+
+Fuente del resumen: :chatgpt-content-reference{index="0"}
+*/
 
 
-// ============================================================
-// 1. ERROR PERSONALIZADO
-// ============================================================
+/*
+1. EXTENDER LA CLASE ERROR
 
-// ValidationError hereda de Error.
-//
-// super(message) llama al constructor de Error y establece
-// la informaciÛn correspondiente al mensaje.
-//
-// DespuÈs modificamos name para identificar nuestro error.
+Para crear un error personalizado podemos extender Error.
+
+El constructor hijo debe llamar a super(message). El constructor de Error establece
+la propiedad message.
+
+Error tambi√©n establece name como "Error", por lo que podemos reemplazarlo por el
+nombre correspondiente a nuestra clase personalizada.
+*/
 
 class ValidationError extends Error {
   constructor(message) {
@@ -28,36 +42,46 @@ class ValidationError extends Error {
 }
 
 
-// Podemos lanzar el error con throw.
+/*
+Este ejemplo demuestra que ValidationError conserva las caracter√≠sticas de Error,
+pero utiliza su propio nombre.
 
-function test() {
-  throw new ValidationError("Whoops!");
+Depende del navegador porque utiliza alert().
+*/
+function ejemploValidationErrorBasico() {
+  function test() {
+    throw new ValidationError("Whoops!");
+  }
+
+  try {
+    test();
+  } catch (err) {
+    alert(err.message); // Whoops!
+    alert(err.name); // ValidationError
+    alert(err.stack); // Pila de llamadas.
+  }
 }
 
 
-// El error puede capturarse con try...catch.
+/*
+2. VALIDACI√ìN DE DATOS CON UN ERROR PERSONALIZADO
 
-try {
-  test();
+readUser(json) utiliza JSON.parse() para convertir el JSON recibido.
 
-} catch (err) {
-  alert(err.message); // Whoops!
-  alert(err.name);    // ValidationError
-  alert(err.stack);   // Pila de llamadas
-}
+Pueden ocurrir dos situaciones diferentes:
 
+1. El JSON est√° mal formado.
+   JSON.parse() lanza SyntaxError.
 
-// ============================================================
-// 2. VALIDACI”N DE UN USUARIO
-// ============================================================
+2. El JSON es sint√°cticamente correcto, pero faltan datos necesarios.
+   readUser() lanza ValidationError.
 
-// JSON.parse genera SyntaxError cuando el JSON est· mal formado.
-//
-// Pero un JSON v·lido tambiÈn puede contener datos incorrectos.
-// En ese caso utilizamos ValidationError.
+Esto permite distinguir los errores de sintaxis de los errores relacionados con
+la validez de los datos.
+*/
 
-function readUser(json) {
-  let user = JSON.parse(json);
+function readUserConValidationError(json) {
+  const user = JSON.parse(json);
 
   if (!user.age) {
     throw new ValidationError("No field: age");
@@ -71,71 +95,66 @@ function readUser(json) {
 }
 
 
-// Podemos diferenciar los errores mediante instanceof.
+/*
+instanceof permite comprobar la clase del error.
 
-try {
-  let user = readUser('{ "age": 25 }');
+Es preferible comprobar:
 
-} catch (err) {
+err instanceof ValidationError
 
-  if (err instanceof ValidationError) {
+en lugar de depender solamente de:
 
-    alert("Invalid data: " + err.message);
+err.name === "ValidationError"
 
-  } else if (err instanceof SyntaxError) {
+La comprobaci√≥n con instanceof tambi√©n funciona si posteriormente aparecen
+subclases que heredan de ValidationError.
 
-    alert("JSON Syntax Error: " + err.message);
+Los errores desconocidos deben volver a lanzarse, porque este bloque catch solo
+sabe c√≥mo tratar determinados tipos de error.
 
-  } else {
-
-    // Los errores desconocidos no deben ocultarse.
-    throw err;
+Flujo:
+JSON.parse o validaci√≥n -> catch -> identificar error conocido -> manejarlo.
+Error desconocido -> volver a lanzar.
+*/
+function ejemploManejoValidationError() {
+  try {
+    const user = readUserConValidationError('{ "age": 25 }');
+    return user;
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      alert("Invalid data: " + err.message);
+    } else if (err instanceof SyntaxError) {
+      alert("JSON Syntax Error: " + err.message);
+    } else {
+      throw err;
+    }
   }
 }
 
 
-// ============================================================
-// 3. instanceof Y name
-// ============================================================
+/*
+3. HERENCIA ENTRE ERRORES PERSONALIZADOS
 
-// TambiÈn serÌa posible comprobar:
-//
-// err.name == "SyntaxError"
-//
-// Sin embargo, instanceof es especialmente ˙til cuando existe
-// una jerarquÌa de errores.
-//
-// Por ejemplo, si PropertyRequiredError hereda de ValidationError,
-// tambiÈn podr· ser identificada mediante:
-//
-// err instanceof ValidationError
+ValidationError es bastante gen√©rico. Podemos crear errores m√°s espec√≠ficos
+que hereden de √©l.
 
+PropertyRequiredError representa el caso concreto en el que falta una propiedad.
 
-// ============================================================
-// 4. HERENCIA DE ERRORES
-// ============================================================
-
-// ValidationError representa un error general de validaciÛn.
-//
-// PropertyRequiredError representa un caso m·s especÌfico:
-// una propiedad requerida no existe.
-//
-// Adem·s, guarda el nombre de la propiedad en property.
+Adem√°s del mensaje, almacena el nombre de la propiedad problem√°tica en
+this.property.
+*/
 
 class PropertyRequiredError extends ValidationError {
   constructor(property) {
     super("No property: " + property);
-
     this.name = "PropertyRequiredError";
     this.property = property;
   }
 }
 
 
-// Podemos utilizar el error especÌfico dentro de readUser.
-
-function readUserWithPropertyError(json) {
-  let user = JSON.parse(json);
+function readUserConPropertyRequiredError(json) {
+  const user = JSON.parse(json);
 
   if (!user.age) {
     throw new PropertyRequiredError("age");
@@ -149,40 +168,46 @@ function readUserWithPropertyError(json) {
 }
 
 
-// Aunque el error sea PropertyRequiredError,
-// tambiÈn es una instancia de ValidationError.
+/*
+PropertyRequiredError hereda de ValidationError.
 
-try {
-  let user = readUserWithPropertyError('{ "age": 25 }');
+Por eso una instancia de PropertyRequiredError tambi√©n satisface:
 
-} catch (err) {
+err instanceof ValidationError
 
-  if (err instanceof ValidationError) {
+Esto permite manejar una familia completa de errores mediante su clase base.
 
-    alert("Invalid data: " + err.message);
-    alert(err.name);     // PropertyRequiredError
-    alert(err.property); // name
-
-  } else if (err instanceof SyntaxError) {
-
-    alert("JSON Syntax Error: " + err.message);
-
-  } else {
-
-    throw err;
+Depende del navegador porque utiliza alert().
+*/
+function ejemploHerenciaDeErrores() {
+  try {
+    const user = readUserConPropertyRequiredError('{ "age": 25 }');
+    return user;
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      alert("Invalid data: " + err.message);
+      alert(err.name); // PropertyRequiredError
+      alert(err.property); // name
+    } else if (err instanceof SyntaxError) {
+      alert("JSON Syntax Error: " + err.message);
+    } else {
+      throw err;
+    }
   }
 }
 
 
-// ============================================================
-// 5. CLASE BASE MyError
-// ============================================================
+/*
+4. CLASE BASE PARA ERRORES PERSONALIZADOS
 
-// Escribir manualmente this.name en cada clase personalizada
-// puede resultar repetitivo.
-//
-// MyError utiliza this.constructor.name para obtener
-// autom·ticamente el nombre de la clase.
+Asignar manualmente this.name en cada clase personalizada puede ser repetitivo.
+
+Podemos crear una clase base que establezca autom√°ticamente el nombre usando:
+
+this.constructor.name
+
+Despu√©s, los dem√°s errores personalizados pueden heredar de esta clase.
+*/
 
 class MyError extends Error {
   constructor(message) {
@@ -192,218 +217,198 @@ class MyError extends Error {
 }
 
 
-// Los errores personalizados pueden heredar de MyError.
+class ValidationErrorAutomatico extends MyError {}
 
-class ValidationErrorBase extends MyError {}
 
-class PropertyRequiredErrorBase extends ValidationErrorBase {
+class PropertyRequiredErrorAutomatico extends ValidationErrorAutomatico {
   constructor(property) {
     super("No property: " + property);
-
     this.property = property;
   }
 }
 
 
-// El nombre se obtiene autom·ticamente.
+/*
+El nombre se obtiene autom√°ticamente del constructor real de la instancia.
 
-let error = new PropertyRequiredErrorBase("field");
+Depende del navegador porque utiliza alert().
+*/
+function ejemploNombreAutomatico() {
+  const error = new PropertyRequiredErrorAutomatico("field");
 
-alert(error.name); // PropertyRequiredErrorBase
-
-
-// ============================================================
-// 6. PROBLEMA DE M⁄LTIPLES ERRORES
-// ============================================================
-
-// readUser puede generar distintos tipos de errores.
-//
-// Si existen muchos tipos, el cÛdigo externo tendrÌa que comprobar
-// cada uno individualmente:
-//
-// ValidationError
-// SyntaxError
-// otros errores...
-//
-// Para evitarlo podemos utilizar un error m·s general:
-// ReadError.
+  alert(error.name); // PropertyRequiredErrorAutomatico
+}
 
 
-// ============================================================
-// 7. ENCAPSULACI”N DE EXCEPCIONES
-// ============================================================
+/*
+5. ENCAPSULACI√ìN DE EXCEPCIONES
 
-// ReadError representa un error general relacionado con la lectura.
-//
-// cause conserva una referencia al error original.
+Una funci√≥n puede producir varios tipos de errores de bajo nivel.
+
+Por ejemplo, una funci√≥n que lee datos puede producir:
+
+- SyntaxError al analizar JSON.
+- ValidationError al validar los datos.
+- Otros errores que podr√≠an aparecer posteriormente.
+
+El c√≥digo externo podr√≠a comprobar cada tipo por separado, pero a medida que
+aumentan los posibles errores esto se vuelve inc√≥modo.
+
+La encapsulaci√≥n de excepciones permite convertir varios errores de bajo nivel
+en un √∫nico error de nivel superior.
+
+El proceso es:
+
+1. Crear un error general, por ejemplo ReadError.
+2. Detectar dentro de readUser() los errores conocidos.
+3. Lanzar ReadError en su lugar.
+4. Guardar el error original en la propiedad cause.
+
+As√≠, el c√≥digo externo solamente necesita comprobar ReadError y puede consultar
+cause cuando necesite conocer el error original.
+*/
 
 class ReadError extends Error {
   constructor(message, cause) {
     super(message);
-
     this.cause = cause;
     this.name = "ReadError";
   }
 }
 
 
-// ============================================================
-// 8. VALIDACI”N SEPARADA
-// ============================================================
+class ValidationErrorLectura extends Error {}
 
-// Esta funciÛn se encarga exclusivamente de validar los datos.
 
-function validateUser(user) {
-
-  if (!user.age) {
-    throw new PropertyRequiredErrorBase("age");
-  }
-
-  if (!user.name) {
-    throw new PropertyRequiredErrorBase("name");
+class PropertyRequiredErrorLectura extends ValidationErrorLectura {
+  constructor(property) {
+    super("No property: " + property);
+    this.name = "PropertyRequiredErrorLectura";
+    this.property = property;
   }
 }
 
 
-// ============================================================
-// 9. ENVOLVER LOS ERRORES EN readUser
-// ============================================================
+function validateUser(user) {
+  if (!user.age) {
+    throw new PropertyRequiredErrorLectura("age");
+  }
 
-// readUser captura los errores conocidos y los convierte
-// en un ReadError.
-//
-// Los errores desconocidos contin˙an propag·ndose.
+  if (!user.name) {
+    throw new PropertyRequiredErrorLectura("name");
+  }
+}
 
-function readUserWrapped(json) {
 
+function readUserConReadError(json) {
   let user;
 
   try {
-
     user = JSON.parse(json);
-
   } catch (err) {
-
     if (err instanceof SyntaxError) {
-
-      // El error original queda almacenado en cause.
       throw new ReadError("Syntax Error", err);
-
-    } else {
-
-      throw err;
     }
+
+    throw err;
   }
 
-
   try {
-
     validateUser(user);
-
   } catch (err) {
-
-    if (err instanceof ValidationErrorBase) {
-
+    if (err instanceof ValidationErrorLectura) {
       throw new ReadError("Validation Error", err);
-
-    } else {
-
-      throw err;
     }
+
+    throw err;
   }
 
   return user;
 }
 
 
-// ============================================================
-// 10. MANEJAR EL ERROR ENVUELTO
-// ============================================================
+/*
+Ahora el c√≥digo externo no necesita conocer todos los errores internos que puede
+producir readUserConReadError().
 
-// El cÛdigo externo ya no necesita conocer todos los errores
-// internos de readUser.
-//
-// Solo comprueba si recibiÛ un ReadError.
+Solo comprueba si recibi√≥ un ReadError.
 
-try {
+Si necesita conocer el error original, puede acceder a:
 
-  readUserWrapped("{bad json}");
+error.cause
 
-} catch (err) {
+Flujo con JSON incorrecto:
 
-  if (err instanceof ReadError) {
+JSON.parse
+-> SyntaxError
+-> ReadError
+-> catch externo
+-> error.cause contiene SyntaxError
 
-    alert(err);
+Los errores desconocidos contin√∫an relanz√°ndose.
 
-    // cause permite acceder al error original.
-    alert("Original error: " + err.cause);
-
-  } else {
-
-    // Los errores desconocidos siguen propag·ndose.
-    throw err;
+Depende del navegador porque utiliza alert().
+*/
+function ejemploEncapsulacionDeExcepciones() {
+  try {
+    readUserConReadError("{bad json}");
+  } catch (err) {
+    if (err instanceof ReadError) {
+      alert(err);
+      alert("Original error: " + err.cause);
+    } else {
+      throw err;
+    }
   }
 }
 
 
-// ============================================================
-// JERARQUÕA DE ERRORES
-// ============================================================
-//
-// Los errores personalizados pueden formar una jerarquÌa:
-//
-//
-//                 Error
-//                   |
-//                MyError
-//                   |
-//            ValidationError
-//                   |
-//        PropertyRequiredError
-//
-//
-// TambiÈn podemos tener un error de nivel superior:
-//
-//                 Error
-//                   |
-//               ReadError
-//
-//
-// ReadError puede encapsular errores producidos internamente,
-// como SyntaxError o ValidationError.
-//
-//
-// ============================================================
-// RESUMEN
-// ============================================================
-//
-// 1. Podemos crear errores personalizados heredando de Error.
-//
-// 2. Al crear una clase hija debemos llamar a super().
-//
-// 3. Podemos establecer name para identificar el tipo de error.
-//
-// 4. instanceof permite comprobar el tipo de error.
-//
-// 5. instanceof tambiÈn funciona con la herencia.
-//
-// 6. MyError permite establecer autom·ticamente name mediante:
-//
-//      this.constructor.name
-//
-// 7. Los errores personalizados pueden organizarse en una jerarquÌa.
-//
-// 8. Los errores desconocidos deben volver a lanzarse.
-//
-// 9. La encapsulaciÛn de excepciones permite transformar varios
-//    errores de bajo nivel en un error m·s general.
-//
-// 10. ReadError puede conservar el error original mediante cause.
-//
-//      ReadError
-//          |
-//          +-- cause --> error original
-//
-// De esta forma, el cÛdigo externo solo necesita comprobar
-// instanceof ReadError y puede consultar cause cuando necesite
-// conocer los detalles del error original.
+/*
+RESUMEN
+
+1. Los errores personalizados pueden heredar de Error.
+
+2. Al extender Error, el constructor debe llamar a super(message).
+
+3. La propiedad name puede establecerse manualmente para identificar el tipo
+   de error.
+
+4. instanceof permite comprobar tipos de errores y tambi√©n funciona con herencia.
+
+5. Una clase de error personalizada puede heredar de otra para crear una jerarqu√≠a.
+
+6. Los errores pueden incluir informaci√≥n adicional mediante propiedades propias,
+   como property o cause.
+
+7. Una clase base personalizada puede asignar autom√°ticamente:
+
+   this.name = this.constructor.name
+
+8. Un bloque catch debe manejar solamente los errores que conoce.
+
+9. Los errores desconocidos deben volver a lanzarse con throw.
+
+10. La encapsulaci√≥n de excepciones convierte varios errores de bajo nivel en un
+    error de nivel superior.
+
+11. El error de nivel superior puede conservar el error original en cause.
+
+12. Con este enfoque, el c√≥digo externo puede comprobar un √∫nico tipo de error,
+    como ReadError, sin conocer todos los detalles internos.
+*/
+
+
+/*
+ACTIVACI√ìN MANUAL
+
+Descomenta solamente el ejemplo que quieras probar.
+
+Los ejemplos utilizan alert(), por lo que est√°n pensados para ejecutarse
+en un entorno de navegador.
+*/
+
+// ejemploValidationErrorBasico();
+// ejemploManejoValidationError();
+// ejemploHerenciaDeErrores();
+// ejemploNombreAutomatico();
+// ejemploEncapsulacionDeExcepciones();

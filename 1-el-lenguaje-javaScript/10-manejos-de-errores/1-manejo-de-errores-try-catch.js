@@ -1,579 +1,766 @@
-// ============================================================
-// MANEJO DE ERRORES ? try...catch
-// ============================================================
-//
-// `try...catch` permite capturar errores de ejecuci�n y
-// manejarlos sin detener completamente el programa.
-//
-// Flujo:
-//
-// try
-//  ?
-// �Error?
-//  ?? NO ? contin�a normalmente
-//  ?? S� ? catch ? maneja el error
-//
-// ============================================================
+/*
+MANEJO DE ERRORES: try...catch
 
-// ============================================================
-// 1. SINTAXIS B�SICA
-// ============================================================
+Normalmente, cuando ocurre un error, el script detiene su ejecución y el error
+se muestra en la consola.
 
-try {
-    // C�digo que puede producir un error
-} catch (error) {
-    // Manejo del error
+La estructura try...catch permite capturar determinados errores para que el
+programa pueda manejarlos en lugar de detenerse inmediatamente.
+
+Fuente de estudio: javascript.info
+Contenido basado exclusivamente en el material proporcionado.
+:chatgpt-content-reference{index="0"}
+*/
+
+/*
+1. SINTAXIS DE try...catch
+
+Primero se ejecuta el bloque try.
+
+Si no ocurre ningún error:
+- catch se ignora.
+- La ejecución continúa después de la estructura.
+
+Si ocurre un error:
+- La ejecución de try se detiene inmediatamente.
+- El control pasa a catch.
+- La variable de catch recibe un objeto con información sobre el error.
+*/
+
+function ejemploSinError() {
+  // Este ejemplo depende del navegador porque utiliza alert().
+
+  try {
+    alert("Inicio de try");
+    alert("Final de try");
+  } catch (err) {
+    alert("Este bloque no se ejecuta");
+  }
 }
 
+function ejemploConError() {
+  // Este ejemplo depende del navegador porque utiliza alert().
 
-// ============================================================
-// 2. EJEMPLO
-// ============================================================
+  try {
+    alert("Inicio de try");
 
-try {
-
-    console.log("Inicio");
-
-    console.log(variableInexistente); // Error
-
-    console.log("Fin"); // No se ejecuta
-
-} catch (error) {
-
-    console.log("Ocurri� un error.");
-}
-
-console.log("El programa contin�a.");
-
-
-// ============================================================
-// 3. OBJETO DE ERROR
-// ============================================================
-//
-// `catch` recibe un objeto con informaci�n sobre el error.
-//
-// Propiedades principales:
-//
-// error.name     ? tipo de error
-// error.message  ? descripci�n
-// error.stack    ? informaci�n �til para depuraci�n
-//
-// ============================================================
-
-try {
-
+    // Error intencional: la variable no existe.
     variableInexistente;
 
-} catch (error) {
-
-    console.log(error.name);    // ReferenceError
-    console.log(error.message); // variableInexistente is not defined
-    console.log(error.stack);   // Pila de llamadas
+    // Esta línea nunca se alcanza.
+    alert("Final de try");
+  } catch (err) {
+    alert("Ha ocurrido un error");
+  }
 }
 
+/*
+Flujo del segundo ejemplo:
 
-// ============================================================
-// 4. CATCH SIN VARIABLE
-// ============================================================
-//
-// Si no necesitamos informaci�n del error,
-// podemos omitir `error`.
-//
-// ============================================================
+1. Se entra en try.
+2. Se ejecuta el primer alert().
+3. variableInexistente produce un error.
+4. try se detiene inmediatamente.
+5. El control pasa a catch.
+*/
+
+
+/*
+2. try...catch SOLO MANEJA ERRORES DE TIEMPO DE EJECUCIÓN
+
+Para que try...catch pueda funcionar, el código debe ser JavaScript válido.
+
+Los errores encontrados mientras el motor analiza el código no pueden ser
+capturados desde ese mismo código, porque el motor todavía no puede ejecutarlo.
+
+Por tanto, try...catch maneja errores producidos durante la ejecución de código
+JavaScript sintácticamente válido. Estos errores también se llaman excepciones.
+
+Un ejemplo como el siguiente no podría incluirse directamente porque convertiría
+este archivo en JavaScript inválido:
 
 try {
+  {{{{{{{{
+} catch (err) {
+  // Nunca puede ejecutarse porque el código ni siquiera puede analizarse.
+}
+*/
 
-    JSON.parse("{ JSON inv�lido }");
 
-} catch {
+/*
+3. try...catch FUNCIONA DE FORMA SÍNCRONA
 
-    console.log("No se pudo procesar el JSON.");
+Si una función se programa para ejecutarse más tarde, el try...catch externo
+ya habrá terminado cuando esa función finalmente se ejecute.
+
+Por eso, un error producido posteriormente dentro de setTimeout no es capturado
+por un try...catch que rodea solamente la llamada a setTimeout.
+*/
+
+function ejemploTryCatchFueraDeSetTimeout() {
+  // Ejemplo intencionalmente problemático.
+  // No ejecutar salvo que se quiera observar el error.
+
+  try {
+    setTimeout(function () {
+      variableQueNoExiste;
+    }, 1000);
+  } catch (err) {
+    console.log("Este catch no captura el error.");
+  }
 }
 
+/*
+Para capturar ese error, try...catch debe estar dentro de la función que se
+ejecutará posteriormente.
+*/
 
-// ============================================================
-// 5. SOLO CAPTURA ERRORES DE EJECUCI�N
-// ============================================================
-//
-// `try...catch` funciona cuando el c�digo es JavaScript v�lido.
-//
-// Error de ejecuci�n ? S� puede capturarse.
-//
-// Error de sintaxis ? NO puede capturarse mediante
-// el mismo `try...catch`, porque el c�digo ni siquiera
-// puede ser interpretado correctamente.
-//
-// ============================================================
-
-
-// ============================================================
-// 6. try...catch ES S�NCRONO
-// ============================================================
-//
-// Un error que ocurre posteriormente en `setTimeout`
-// no ser� capturado por un `try...catch` externo.
-//
-// INCORRECTO:
-//
-// try {
-//     setTimeout(() => {
-//         throw new Error("Error");
-//     }, 1000);
-// } catch (error) {
-//     // No captura el error
-// }
-//
-// El `try...catch` ya termin� cuando se ejecuta el callback.
-//
-// La soluci�n es colocar `try...catch` dentro del callback:
-//
-// ============================================================
-
-setTimeout(() => {
-
+function ejemploTryCatchDentroDeSetTimeout() {
+  setTimeout(function () {
     try {
-
-        throw new Error("Error dentro de setTimeout");
-
-    } catch (error) {
-
-        console.log("Error capturado.");
+      variableQueNoExiste;
+    } catch {
+      console.log("El error fue capturado dentro de setTimeout.");
     }
-
-}, 1000);
-
-
-// ============================================================
-// 7. JSON.parse() ? CASO PR�CTICO
-// ============================================================
-//
-// `JSON.parse()` genera un error si recibe JSON inv�lido.
-//
-// ============================================================
-
-const json = '{ "name": "John", "age": 30 }';
-
-try {
-
-    const user = JSON.parse(json);
-
-    console.log(user.name); // John
-    console.log(user.age);  // 30
-
-} catch (error) {
-
-    console.log("JSON inv�lido:", error.message);
+  }, 1000);
 }
 
 
-// ============================================================
-// 8. THROW ? CREAR NUESTROS PROPIOS ERRORES
-// ============================================================
-//
-// `throw` permite generar un error manualmente.
-//
-// Sintaxis:
-//
-// throw error;
-//
-// Podemos utilizar constructores como:
-//
-// new Error()
-// new SyntaxError()
-// new ReferenceError()
-// new TypeError()
-//
-// ============================================================
+/*
+4. OBJETO DE ERROR
 
-const jsonData = '{ "age": 30 }';
+Cuando ocurre un error, JavaScript crea un objeto con información sobre él y
+lo entrega a catch.
 
-try {
+Las propiedades principales de los errores integrados son:
 
-    const user = JSON.parse(jsonData);
+name
+Nombre del error, por ejemplo "ReferenceError".
 
-    // El JSON es v�lido, pero falta un dato necesario.
-    if (!user.name) {
+message
+Mensaje con información sobre el error.
 
-        throw new SyntaxError("Falta la propiedad name.");
+stack
+Propiedad no estándar, pero ampliamente disponible, que contiene información
+sobre la secuencia de llamadas que condujo al error. Se utiliza para depuración.
 
-    }
+Cuando el objeto de error se convierte a texto normalmente adopta una forma
+similar a:
 
-    console.log(user.name);
+"name: message"
+*/
 
-} catch (error) {
-
-    console.log("Error:", error.message);
+function ejemploObjetoError() {
+  try {
+    variableNoDefinida;
+  } catch (err) {
+    console.log(err.name);
+    console.log(err.message);
+    console.log(err.stack);
+    console.log(err);
+  }
 }
 
 
-// ============================================================
-// 9. DIFERENCIA IMPORTANTE
-// ============================================================
-//
-// JSON V�LIDO:
-//
-// '{ "age": 30 }'
-//
-// ? JSON.parse() funciona.
-// ? Pero puede faltar informaci�n que nuestra aplicaci�n
-//   necesita.
-//
-// Podemos detectar ese problema y crear nuestro propio error:
-//
-// ============================================================
+/*
+5. ENLACE OPCIONAL DE catch
 
-const json = '{ "age": 30 }';
+Si no necesitamos acceder al objeto de error, podemos omitir el parámetro.
 
-try {
+Ambas formas son válidas:
 
-    const user = JSON.parse(json);
+catch (err) {
+  // Se utiliza err.
+}
 
-    if (!user.name) {
-        throw new SyntaxError("Falta name.");
-    }
+catch {
+  // No necesitamos información sobre el error.
+}
+*/
 
-} catch (error) {
-
-    console.log(error.name);    // SyntaxError
-    console.log(error.message); // Falta name.
+function ejemploCatchSinParametro() {
+  try {
+    variableNoDefinida;
+  } catch {
+    console.log("Ocurrió un error.");
+  }
 }
 
 
-// ============================================================
-// RESUMEN
-// ============================================================
-//
-// `try...catch`
-// ? Captura errores de ejecuci�n.
-//
-// `try`
-// ? Contiene el c�digo que puede fallar.
-//
-// `catch`
-// ? Maneja el error.
-//
-// `error.name`
-// ? Tipo de error.
-//
-// `error.message`
-// ? Mensaje del error.
-//
-// `error.stack`
-// ? Informaci�n para depuraci�n.
-//
-// `throw`
-// ? Permite generar nuestros propios errores.
-//
-// `new Error()`
-// ? Crea un error.
-//
-// `new SyntaxError()`
-// ? Crea un error de sintaxis.
-//
-// `try...catch` NO captura:
-// ? Errores de sintaxis del propio c�digo.
-//
-// `try...catch` es s�ncrono:
-// ? Los errores de `setTimeout` deben capturarse
-//   dentro de su callback.
-//
-// ============================================================
-//
-// IDEA CLAVE:
-//
-// try     ? intenta ejecutar
-// catch   ? maneja el error
-// throw   ? genera un error
-//
-// ============================================================
+/*
+6. USO DE try...catch CON JSON.parse()
 
-// ============================================================
-// MANEJO DE ERRORES ? try...catch
-// ============================================================
+JSON.parse(str) convierte una representación JSON en un valor JavaScript.
 
-// ============================================================
-// 1. RELANZAR ERRORES (RETHROW)
-// ============================================================
-//
-// catch captura TODOS los errores ocurridos dentro de try.
-//
-// Por eso, si catch solo sabe manejar ciertos errores,
-// debe volver a lanzar (rethrow) los dem�s:
-//
-//     if (error conocido) ? manejar
-//     else ? throw error
-//
-// Esto evita ocultar errores inesperados.
-// ============================================================
+Si el JSON es válido, JSON.parse() funciona normalmente.
+*/
+
+function ejemploJsonValido() {
+  const json = '{"name":"John", "age":30}';
+  const usuario = JSON.parse(json);
+
+  console.log(usuario.name);
+  console.log(usuario.age);
+}
+
+/*
+Si el JSON está mal formado, JSON.parse() genera un error.
+
+try...catch permite manejar ese problema en lugar de dejar que el error detenga
+inmediatamente el script.
+*/
+
+function ejemploJsonInvalido() {
+  const json = "{ bad json }";
+
+  try {
+    const usuario = JSON.parse(json);
+    console.log(usuario.name);
+  } catch (err) {
+    console.log(
+      "Los datos contienen errores. Se podría intentar obtenerlos nuevamente."
+    );
+
+    console.log(err.name);
+    console.log(err.message);
+  }
+}
 
 
-try {
+/*
+7. GENERAR NUESTROS PROPIOS ERRORES CON throw
 
-    let user = JSON.parse('{ "age": 30 }');
+Un dato puede ser sintácticamente válido y aun así ser inválido para nuestro
+programa.
 
-    if (!user.name) {
-        throw new SyntaxError("Incomplete data: no name");
+Por ejemplo:
+
+{ "age": 30 }
+
+es JSON válido, pero puede considerarse incompleto si necesitamos obligatoriamente
+una propiedad name.
+
+El operador throw permite generar un error manualmente.
+
+Sintaxis conceptual:
+
+throw <objeto de error>;
+
+Técnicamente se puede lanzar cualquier valor, incluso un número o una cadena.
+Sin embargo, es preferible utilizar objetos de error, especialmente objetos que
+dispongan de name y message.
+*/
+
+
+/*
+8. CONSTRUCTORES DE ERRORES
+
+JavaScript proporciona constructores integrados como:
+
+Error
+SyntaxError
+ReferenceError
+TypeError
+
+Podemos utilizarlos para crear objetos de error.
+*/
+
+function ejemploCrearError() {
+  const error = new Error("Things happen o_O");
+
+  console.log(error.name);
+  console.log(error.message);
+}
+
+function ejemploSyntaxError() {
+  const error = new SyntaxError("Datos incompletos");
+
+  console.log(error.name);
+  console.log(error.message);
+}
+
+/*
+Para los errores integrados, name corresponde al nombre del constructor y
+message se obtiene del argumento proporcionado al constructor.
+*/
+
+
+/*
+9. JSON.parse() PRODUCE SyntaxError CUANDO EL JSON ES INVÁLIDO
+*/
+
+function ejemploErrorDeJsonParse() {
+  try {
+    JSON.parse("{ bad json o_O }");
+  } catch (err) {
+    console.log(err.name);
+    console.log(err.message);
+  }
+}
+
+
+/*
+10. VALIDACIÓN MANUAL CON throw
+
+Podemos lanzar manualmente un error cuando los datos son sintácticamente
+correctos pero no cumplen los requisitos esperados.
+
+El throw detiene inmediatamente la ejecución del bloque try y transfiere el
+control a catch.
+*/
+
+function ejemploValidacionConThrow() {
+  const json = '{ "age": 30 }';
+
+  try {
+    const usuario = JSON.parse(json);
+
+    if (!usuario.name) {
+      throw new SyntaxError("Incomplete data: no name");
     }
 
-} catch (error) {
+    console.log(usuario.name);
+  } catch (err) {
+    console.log("JSON Error: " + err.message);
+  }
+}
 
-    if (error instanceof SyntaxError) {
+/*
+Flujo:
 
-        // Sabemos manejar este error
-        console.log("JSON Error:", error.message);
+JSON.parse()
+-> validación de usuario.name
+-> throw SyntaxError
+-> catch
+*/
 
+
+/*
+11. UN SOLO catch PUEDE RECIBIR DIFERENTES TIPOS DE ERROR
+
+catch recibe cualquier error ocurrido dentro de try.
+
+Esto puede convertirse en un problema si catch fue diseñado para manejar un
+tipo específico de error.
+
+Por ejemplo, podríamos querer manejar solamente problemas con los datos, pero
+también podría producirse accidentalmente un ReferenceError debido a un error
+de programación.
+
+No deberíamos tratar todos los errores como si fueran el mismo problema.
+*/
+
+
+/*
+12. RELANZAMIENTO DE ERRORES
+
+Una estrategia importante consiste en:
+
+1. Capturar el error.
+2. Examinar qué tipo de error es.
+3. Manejar únicamente los errores conocidos.
+4. Volver a lanzar los errores desconocidos.
+
+Para volver a lanzar un error se utiliza:
+
+throw err;
+
+El operador instanceof puede utilizarse para comprobar el tipo de error.
+*/
+
+function ejemploInstanceof() {
+  try {
+    variableNoDefinida;
+  } catch (err) {
+    if (err instanceof ReferenceError) {
+      console.log("Se produjo un ReferenceError.");
+    }
+  }
+}
+
+
+/*
+13. MANEJAR SyntaxError Y RELANZAR LOS DEMÁS
+
+En este ejemplo, catch sabe manejar SyntaxError.
+
+Si recibe cualquier otro tipo de error, lo vuelve a lanzar.
+*/
+
+function ejemploRelanzamiento() {
+  const json = '{ "age": 30 }';
+
+  try {
+    const usuario = JSON.parse(json);
+
+    if (!usuario.name) {
+      throw new SyntaxError("Incomplete data: no name");
+    }
+
+    // Si se alcanzara una operación que produjera otro tipo de error,
+    // catch debería relanzarlo.
+
+    console.log(usuario.name);
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      console.log("JSON Error: " + err.message);
     } else {
-
-        // No sabemos manejarlo ? lo volvemos a lanzar
-        throw error;
+      throw err;
     }
+  }
 }
 
 
-// ============================================================
-// 2. �C�MO IDENTIFICAR EL TIPO DE ERROR?
-// ============================================================
-//
-// Podemos utilizar:
-//
-// error instanceof TipoError
-// error.name
-// error.constructor.name
-//
-// Ejemplo:
-//
-// error instanceof SyntaxError
-// error.name === "SyntaxError"
-// ============================================================
+/*
+14. try...catch ANIDADO Y RELANZAMIENTO
 
+Un error relanzado sale del try...catch actual.
 
-try {
+Después puede:
 
-    JSON.parse("{ bad json }");
+- Ser capturado por otro try...catch externo.
+- Detener la ejecución si ningún manejador lo captura.
 
-} catch (error) {
+Esto permite que una función gestione únicamente los errores que conoce y deje
+los demás para niveles superiores.
+*/
 
-    console.log(error instanceof SyntaxError); // true
-    console.log(error.name);                   // SyntaxError
-}
-
-
-// ============================================================
-// 3. RELANZAMIENTO CON try...catch EXTERNO
-// ============================================================
-//
-// Una funci�n puede manejar los errores que conoce
-// y dejar que otro try...catch maneje los dem�s.
-// ============================================================
-
-
-function readData() {
-
-    try {
-
-        // ...
-
-        blabla(); // Error inesperado
-
-    } catch (error) {
-
-        if (!(error instanceof SyntaxError)) {
-            throw error; // No s� manejarlo
-        }
+function leerDatos() {
+  try {
+    variableNoDefinida;
+  } catch (err) {
+    if (!(err instanceof SyntaxError)) {
+      throw err;
     }
+  }
 }
 
-
-try {
-
-    readData();
-
-} catch (error) {
-
-    // Captura el error que readData volvi� a lanzar
-    console.log("Error externo:", error);
+function ejemploCatchExterno() {
+  try {
+    leerDatos();
+  } catch (err) {
+    console.log("El catch externo recibió: " + err);
+  }
 }
 
+/*
+Flujo:
 
-// ============================================================
-// 4. finally
-// ============================================================
-//
-// finally se ejecuta SIEMPRE:
-//
-// Sin error:
-//     try ? finally
-//
-// Con error:
-//     try ? catch ? finally
-//
-// Se utiliza para ejecutar c�digo de limpieza o finalizaci�n.
-// ============================================================
+leerDatos()
+-> ocurre ReferenceError
+-> catch interno
+-> no es SyntaxError
+-> throw err
+-> catch externo
+*/
 
+
+/*
+15. try...catch...finally
+
+La estructura puede incluir un bloque finally.
+
+finally se ejecuta siempre:
+
+- Después de try si no hubo errores.
+- Después de catch si hubo errores.
+
+Sintaxis:
 
 try {
-
-    console.log("try");
-
-} catch (error) {
-
-    console.log("catch");
-
+  // Código.
+} catch (err) {
+  // Manejo del error.
 } finally {
+  // Se ejecuta siempre.
+}
+*/
 
+function ejemploFinallySinError() {
+  try {
+    console.log("try");
+  } catch (err) {
+    console.log("catch");
+  } finally {
     console.log("finally");
+  }
+}
+
+// Flujo: try -> finally.
+
+function ejemploFinallyConError() {
+  try {
+    console.log("try");
+    variableNoDefinida;
+  } catch (err) {
+    console.log("catch");
+  } finally {
+    console.log("finally");
+  }
+}
+
+// Flujo: try -> error -> catch -> finally.
+
+
+/*
+16. finally PARA FINALIZAR OPERACIONES
+
+finally resulta útil cuando iniciamos una operación y necesitamos finalizarla
+sin importar si terminó correctamente o produjo un error.
+
+El material utiliza como ejemplo la medición del tiempo de ejecución de una
+función de Fibonacci.
+
+La función genera un error si recibe un número negativo o no entero.
+*/
+
+function fibonacci(n) {
+  if (n < 0 || Math.trunc(n) !== n) {
+    throw new Error("Must not be negative, and also an integer.");
+  }
+
+  return n <= 1 ? n : fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+function ejemploMedicionConFinally(numero) {
+  let diferencia;
+  let resultado;
+
+  const inicio = Date.now();
+
+  try {
+    resultado = fibonacci(numero);
+  } catch (err) {
+    resultado = 0;
+  } finally {
+    diferencia = Date.now() - inicio;
+  }
+
+  console.log(resultado || "error occurred");
+  console.log(`execution took ${diferencia}ms`);
+}
+
+/*
+Aunque fibonacci() genere un error, finally calcula igualmente el tiempo
+transcurrido.
+*/
+
+
+/*
+17. finally SE EJECUTA INCLUSO CON return O throw
+
+Una función puede abandonar try mediante return o throw.
+
+Aun así, finally se ejecuta antes de que el control salga de la estructura.
+*/
+
+function ejemploFinallyConReturn() {
+  try {
+    return 1;
+  } catch (err) {
+    console.log(err);
+  } finally {
+    console.log("finally se ejecuta antes de devolver el resultado");
+  }
 }
 
 
-// ============================================================
-// 5. finally SE EJECUTA INCLUSO CON return
-// ============================================================
+/*
+18. ALCANCE DE VARIABLES EN try...catch...finally
 
+Las variables declaradas con let o const dentro de un bloque solamente son
+visibles dentro de ese bloque.
 
-function test() {
+Por eso, si una variable debe utilizarse después de try...catch...finally,
+puede ser necesario declararla antes de la estructura.
+*/
 
-    try {
+function ejemploAlcance() {
+  let resultado;
 
-        return 1;
+  try {
+    resultado = "Operación completada";
+  } catch (err) {
+    resultado = "Ocurrió un error";
+  }
 
-    } finally {
-
-        console.log("finally");
-    }
-}
-
-console.log(test());
-
-// Primero:
-// finally
-//
-// Despu�s:
-// 1
-
-
-// ============================================================
-// 6. try...finally
-// ============================================================
-//
-// Tambi�n podemos usar try sin catch:
-//
-// try {
-//     // c�digo
-// } finally {
-//     // se ejecuta siempre
-// }
-//
-// �til cuando NO queremos manejar el error aqu�,
-// pero necesitamos asegurarnos de finalizar algo.
-// ============================================================
-
-
-function process() {
-
-    try {
-
-        // Operaci�n
-
-    } finally {
-
-        // Limpieza / finalizaci�n
-    }
+  console.log(resultado);
 }
 
 
-// ============================================================
-// 7. VARIABLES Y try...catch...finally
-// ============================================================
-//
-// let y const tienen alcance de bloque.
-//
-// Si necesitamos una variable despu�s de try/catch/finally,
-// debemos declararla fuera.
-// ============================================================
+/*
+19. try...finally SIN catch
 
+También puede utilizarse try...finally sin catch.
 
-let result;
+Esta forma resulta útil cuando no queremos manejar el error en ese lugar, pero
+sí necesitamos ejecutar una operación de finalización.
 
-try {
+El error continúa propagándose después de ejecutar finally.
+*/
 
-    result = 100;
+function ejemploTryFinally() {
+  try {
+    console.log("Inicio de una operación");
 
-} catch (error) {
-
-    result = 0;
+    // Aquí podría producirse un error.
+  } finally {
+    console.log("Finalización de la operación");
+  }
 }
 
-console.log(result);
 
+/*
+20. CAPTURA GLOBAL DE ERRORES
 
-// ============================================================
-// 8. CAPTURA GLOBAL
-// ============================================================
-//
-// Es espec�fica del entorno, NO forma parte del JavaScript
-// principal.
-//
-// En navegadores podemos usar:
-//
-// window.onerror
-//
-// Sirve para detectar errores no controlados.
-//
-// Su objetivo normalmente es registrar/informar el error,
-// no intentar recuperar la ejecuci�n.
-// ============================================================
+La captura global depende del entorno y no forma parte del núcleo principal de
+JavaScript.
 
+Los entornos pueden proporcionar mecanismos para reaccionar ante errores que
+no fueron capturados mediante try...catch.
 
-window.onerror = function(message, url, line, col, error) {
+En el navegador puede utilizarse window.onerror.
 
-    console.log("Error:", message);
-    console.log("Ubicaci�n:", line, col);
+Su forma general es:
+
+window.onerror = function (message, url, line, col, error) {
+  // ...
 };
 
+Parámetros:
 
-// ============================================================
-// RESUMEN
-// ============================================================
-//
-// RELANZAR
-// --------
-// catch debe manejar solo los errores que conoce.
-//
-//     if (error conocido) {
-//         manejarlo
-//     } else {
-//         throw error;
-//     }
-//
-//
-// finally
-// -------
-// Se ejecuta siempre:
-//
-//     try ? finally
-//     try ? catch ? finally
-//
-// Incluso si existe:
-//     return
-//     throw
-//
-//
-//
-// try...finally
-// -------------
-// Permite ejecutar c�digo de finalizaci�n sin capturar
-// el error.
-//
-//
-// CAPTURA GLOBAL
-// --------------
-// window.onerror permite detectar errores no controlados
-// en navegadores.
-//
-//
-// REGLA CLAVE
-// -----------
-// No ocultes errores que no sabes manejar.
-// Si no sabes qu� hacer con un error ? vuelve a lanzarlo.
-//
-// ============================================================
+message
+Mensaje del error.
+
+url
+URL del script donde ocurrió.
+
+line
+Número de línea.
+
+col
+Número de columna.
+
+error
+Objeto de error.
+
+El objetivo habitual de un manejador global no es recuperar la ejecución del
+programa, sino registrar información sobre errores no controlados.
+*/
+
+function configurarManejadorGlobalDeErrores() {
+  // Este ejemplo depende del navegador.
+
+  window.onerror = function (message, url, line, col, error) {
+    console.log(`${message}\nAt ${line}:${col} of ${url}`);
+    console.log(error);
+  };
+}
+
+/*
+El material también menciona que Node.js proporciona:
+
+process.on("uncaughtException")
+
+Como la captura global depende del entorno, no existe una única solución
+universal perteneciente al núcleo del lenguaje.
+*/
+
+
+/*
+RESUMEN
+
+1. try...catch permite capturar errores producidos durante la ejecución.
+
+2. Si try termina sin errores, catch se omite.
+
+3. Si ocurre un error dentro de try, su ejecución se detiene y el control pasa
+   a catch.
+
+4. try...catch solamente puede manejar errores producidos en JavaScript
+   sintácticamente válido.
+
+5. try...catch funciona de forma síncrona. Para capturar un error ocurrido
+   posteriormente dentro de una función programada, el try...catch debe estar
+   dentro de esa función.
+
+6. Los errores integrados proporcionan principalmente:
+   - name
+   - message
+   - stack, disponible en muchos entornos aunque no sea estándar.
+
+7. Si no necesitamos el objeto de error podemos escribir:
+
+   catch {
+     // ...
+   }
+
+8. JSON.parse() genera un error cuando recibe JSON inválido.
+
+9. throw permite generar errores manualmente.
+
+10. JavaScript proporciona constructores de error como:
+    Error
+    SyntaxError
+    ReferenceError
+    TypeError
+
+11. Un catch recibe todos los errores producidos dentro de su try.
+
+12. Un catch debería manejar los errores que conoce y relanzar mediante
+    throw err aquellos que no sabe manejar.
+
+13. instanceof permite comprobar el tipo de un objeto de error.
+
+14. Un error relanzado puede ser capturado por un try...catch externo.
+
+15. finally se ejecuta tanto si hubo error como si no.
+
+16. finally también se ejecuta cuando try termina mediante return o throw.
+
+17. try...finally puede utilizarse cuando necesitamos finalizar una operación
+    pero no queremos manejar el error localmente.
+
+18. Los mecanismos globales de captura de errores dependen del entorno.
+*/
+
+
+/*
+ACTIVACIÓN MANUAL
+
+Descomenta solamente el ejemplo que quieras probar.
+Algunos ejemplos producen errores intencionales o dependen del navegador.
+*/
+
+// ejemploSinError();
+// ejemploConError();
+
+// ejemploTryCatchFueraDeSetTimeout();
+// ejemploTryCatchDentroDeSetTimeout();
+
+// ejemploObjetoError();
+// ejemploCatchSinParametro();
+
+// ejemploJsonValido();
+// ejemploJsonInvalido();
+
+// ejemploCrearError();
+// ejemploSyntaxError();
+// ejemploErrorDeJsonParse();
+// ejemploValidacionConThrow();
+
+// ejemploInstanceof();
+// ejemploRelanzamiento();
+// ejemploCatchExterno();
+
+// ejemploFinallySinError();
+// ejemploFinallyConError();
+// console.log(ejemploFinallyConReturn());
+
+// ejemploMedicionConFinally(10);
+// ejemploMedicionConFinally(-1);
+
+// ejemploAlcance();
+// ejemploTryFinally();
+
+// configurarManejadorGlobalDeErrores();
